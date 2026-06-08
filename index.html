@@ -92,26 +92,43 @@ input:focus,select:focus,textarea:focus { outline:none; border-color:#E8943A; }
 </head>
 <body>
 
+<!-- LOGIN OVERLAY -->
+<div id="login-overlay" style="position:fixed;inset:0;background:#1C1E20;z-index:9999;display:flex;align-items:center;justify-content:center;">
+  <div style="background:white;border-radius:16px;padding:32px 28px;max-width:320px;width:90%;text-align:center;box-shadow:0 8px 40px rgba(0,0,0,.4);">
+    <div style="font-size:40px;margin-bottom:8px;">📋</div>
+    <div style="font-size:18px;font-weight:700;color:#1C1E20;margin-bottom:4px;">Samen Digitaal Sterk</div>
+    <div style="font-size:12px;color:#888;margin-bottom:24px;">Rotterdam 2026</div>
+    <input type="password" id="login-pin" placeholder="Toegangscode" maxlength="6"
+      style="text-align:center;letter-spacing:6px;font-size:20px;width:100%;padding:12px;border:2px solid #ddd;border-radius:10px;outline:none;margin-bottom:12px;"
+      onkeydown="if(event.key==='Enter') doLogin()"
+      onfocus="this.style.borderColor='#E8943A'" onblur="this.style.borderColor='#ddd'">
+    <button onclick="doLogin()" style="width:100%;padding:12px;background:#E8943A;color:white;border:none;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;">Inloggen</button>
+    <div id="login-err" style="color:#c00;font-size:12px;margin-top:10px;min-height:16px;"></div>
+  </div>
+</div>
+
 <div class="topbar">
   <div class="topbar-logo">📋</div>
   <div>
     <div style="font-size:15px;font-weight:600;">Samen Digitaal Sterk</div>
-    <div style="font-size:11px;color:#aaa;">Beheer · v6 · Rotterdam 2026</div>
+    <div style="font-size:11px;color:#aaa;">Beheer · v7 · Rotterdam 2026</div>
   </div>
   <div style="margin-left:auto;display:flex;align-items:center;gap:12px;">
+    <span id="rol-badge" style="display:none;font-size:11px;color:#aaa;"></span>
     <span id="sync-badge" class="sync-status" style="display:none;"></span>
     <span style="font-size:11px;color:#aaa;" id="save-indicator"></span>
+    <button onclick="uitloggen()" style="background:none;border:none;color:#666;font-size:11px;cursor:pointer;padding:4px 8px;" title="Uitloggen">↩</button>
   </div>
 </div>
 
 <div class="tabs">
-  <div class="tab active" onclick="showTab('organisaties',this)">🏢 Organisaties</div>
-  <div class="tab" onclick="showTab('workshops',this)">🗓 Workshops</div>
-  <div class="tab" onclick="showTab('deelnemers',this)">👥 Deelnemers</div>
-  <div class="tab" onclick="showTab('vrijwilligers',this)">🙋 Vrijwilligers</div>
-  <div class="tab" onclick="showTab('certificaten',this)">🎓 Certificaten</div>
-  <div class="tab" onclick="showTab('formulieren',this)">📝 Formulieren</div>
-  <div class="tab" onclick="showTab('evaluatie',this)">📊 Evaluatie</div>
+  <div class="tab active" id="tab-btn-organisaties" onclick="showTab('organisaties',this)">🏢 Organisaties</div>
+  <div class="tab" id="tab-btn-workshops" onclick="showTab('workshops',this)">🗓 Workshops</div>
+  <div class="tab" id="tab-btn-deelnemers" onclick="showTab('deelnemers',this)">👥 Deelnemers</div>
+  <div class="tab" id="tab-btn-vrijwilligers" onclick="showTab('vrijwilligers',this)">🙋 Vrijwilligers</div>
+  <div class="tab" id="tab-btn-certificaten" onclick="showTab('certificaten',this)">🎓 Certificaten</div>
+  <div class="tab" id="tab-btn-formulieren" onclick="showTab('formulieren',this)">📝 Formulieren</div>
+  <div class="tab" id="tab-btn-evaluatie" onclick="showTab('evaluatie',this)">📊 Evaluatie</div>
   <div class="tab" id="tab-btn-instellingen" onclick="showTabInstellingen(this)" style="margin-left:auto;">⚙ Instellingen</div>
 </div>
 
@@ -402,13 +419,101 @@ function doGet(e) {
 let db = { organisaties:[], workshops:[], deelnemers:[], vrijwilligers:[] };
 let orgContactCount = 1;
 
+// ── ROLLEN ──
+// Codes: 3162 = beheerder, 2026 = projectleider, 1234 = vrijwilliger
+const ROLLEN = {
+  '3162': 'beheerder',
+  '2026': 'projectleider',
+  '1234': 'vrijwilliger'
+};
+const SHEETS_URL = localStorage.getItem('sds_sheets_url') || '';
+let currentRol = null;
+
+function doLogin() {
+  const code = document.getElementById('login-pin').value.trim();
+  const rol = ROLLEN[code];
+  if(!rol) {
+    document.getElementById('login-err').textContent = 'Onjuiste code.';
+    document.getElementById('login-pin').value = '';
+    return;
+  }
+  currentRol = rol;
+  sessionStorage.setItem('sds_rol', rol);
+  document.getElementById('login-overlay').style.display = 'none';
+  applyRol();
+  load();
+  // Auto sync bij inloggen
+  const url = localStorage.getItem('sds_sheets_url') || SHEETS_URL_HARDCODED;
+  if(url) syncVanAuto(url);
+}
+
+function applyRol() {
+  const isB = currentRol === 'beheerder';
+  const isPL = currentRol === 'projectleider';
+  const isVW = currentRol === 'vrijwilliger';
+
+  // Tabs zichtbaarheid
+  const tabVW = ['deelnemers','vrijwilligers','formulieren'];
+  const tabPL = ['organisaties','workshops','deelnemers','vrijwilligers','certificaten','formulieren','evaluatie'];
+  const tabB  = ['organisaties','workshops','deelnemers','vrijwilligers','certificaten','formulieren','evaluatie','instellingen'];
+  const zichtbaar = isB ? tabB : isPL ? tabPL : tabVW;
+
+  ['organisaties','workshops','deelnemers','vrijwilligers','certificaten','formulieren','evaluatie','instellingen'].forEach(t => {
+    const btn = document.getElementById('tab-btn-'+t);
+    if(btn) btn.style.display = zichtbaar.includes(t) ? '' : 'none';
+  });
+
+  // Eerste zichtbare tab activeren
+  const eersteTab = zichtbaar[0];
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
+  const firstEl = document.getElementById('tab-btn-'+eersteTab);
+  if(firstEl) { firstEl.classList.add('active'); document.getElementById('tab-'+eersteTab).classList.add('active'); }
+
+  // Rol badge
+  const badge = document.getElementById('rol-badge');
+  if(badge) {
+    badge.textContent = isB ? '🔑 Beheerder' : isPL ? '👁 Projectleider' : '🙋 Vrijwilliger';
+    badge.style.display = '';
+  }
+
+  // Bewerkrechten: vrijwilliger kan alleen deelnemers toevoegen/aanwezigheid
+  // Projectleider kan alles bekijken maar niet wissen/beheren (UI feedback)
+}
+
+// Herstel sessie bij herlaad
+function herstelSessie() {
+  const rol = sessionStorage.getItem('sds_rol');
+  if(rol && ROLLEN[Object.keys(ROLLEN).find(k=>ROLLEN[k]===rol)||'']) {
+    currentRol = rol;
+    document.getElementById('login-overlay').style.display = 'none';
+    applyRol();
+    return true;
+  }
+  return false;
+}
+
 // ── STORAGE ──
+const SHEETS_URL_HARDCODED = 'https://script.google.com/macros/s/AKfycbzdkGjIjX6-uP1wk6kfqiD4gD9N_ECXJVGQZjhO4uknHQGNLbItvdBnbAPVqa6KEkxi_w/exec';
+
 function load() {
   try { const r = localStorage.getItem('sds_v6'); if(r) db=JSON.parse(r); } catch(e){}
   const url = localStorage.getItem('sds_sheets_url')||'';
   const el = document.getElementById('sheets-url');
   if(el) el.value = url;
   render();
+}
+
+async function syncVanAuto(url) {
+  if(!url) return;
+  try {
+    const resp = await fetch(url+'?action=get');
+    const result = await resp.json();
+    if(result.ok && result.data) {
+      db = result.data; save(); render();
+      setSyncBadge('ok','✓ Data opgehaald');
+    }
+  } catch(e) { /* stil falen bij auto-sync */ }
 }
 function save() {
   try {
@@ -417,6 +522,9 @@ function save() {
     el.textContent = '✓ ' + new Date().toLocaleTimeString('nl-NL',{hour:'2-digit',minute:'2-digit'});
     setTimeout(()=>el.textContent='',3000);
   } catch(e){}
+}
+function getSheetUrl() {
+  return localStorage.getItem('sds_sheets_url') || SHEETS_URL_HARDCODED;
 }
 function saveSheetUrl() {
   localStorage.setItem('sds_sheets_url', document.getElementById('sheets-url').value.trim());
@@ -487,8 +595,8 @@ function setSyncBadge(state, tekst) {
 function setSyncLog(msg) { const el=document.getElementById('sync-log'); if(el) el.textContent=msg; }
 
 async function syncNaar() {
-  const url = document.getElementById('sheets-url').value.trim();
-  if(!url){ alert('Vul eerst de Apps Script URL in.'); return; }
+  const url = getSheetUrl();
+  if(!url){ alert('Geen Sheets URL beschikbaar.'); return; }
   setSyncBadge('syncing','⟳ Bezig…');
   setSyncLog('Data versturen…');
   try {
@@ -499,8 +607,8 @@ async function syncNaar() {
   } catch(e) { setSyncBadge('err','✗ Verbinding mislukt'); setSyncLog('Controleer de URL.'); }
 }
 async function syncVan() {
-  const url = document.getElementById('sheets-url').value.trim();
-  if(!url){ alert('Vul eerst de Apps Script URL in.'); return; }
+  const url = getSheetUrl();
+  if(!url){ alert('Geen Sheets URL beschikbaar.'); return; }
   setSyncBadge('syncing','⟳ Ophalen…'); setSyncLog('Data ophalen…');
   try {
     const resp = await fetch(url+'?action=get');
@@ -980,8 +1088,25 @@ ${db.workshops.map(w=>{const d=db.deelnemers.filter(x=>x.wsId===w.id);const cert
   <button class="btn btn-t" onclick="navigator.clipboard.writeText(window._rapport).then(()=>alert('Gekopieerd!'))" style="margin-top:8px;">📋 Kopiëren</button>`;
 }
 
+function uitloggen() {
+  sessionStorage.removeItem('sds_rol');
+  currentRol = null;
+  document.getElementById('login-overlay').style.display = 'flex';
+  document.getElementById('login-pin').value = '';
+  document.getElementById('login-err').textContent = '';
+}
+
 function render() { renderOrgs(); renderWorkshops(); }
-load();
+
+// Start
+if(!herstelSessie()) {
+  // Login overlay al zichtbaar
+  document.getElementById('login-pin').focus();
+} else {
+  load();
+  const url = localStorage.getItem('sds_sheets_url') || SHEETS_URL_HARDCODED;
+  if(url) syncVanAuto(url);
+}
 </script>
 
 <script>
