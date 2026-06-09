@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Samen Digitaal Sterk — Beheer v8</title>
+<title>Samen Digitaal Sterk — Beheer v8b</title>
 <style>
 @font-face {
   font-family: 'Bebas Neue';
@@ -105,9 +105,28 @@ input[readonly]{background:#f9f9f9;color:#888;}
 .timeline-dot.done{background:#4DA99A;}
 .timeline-dot.active{background:#E8943A;}
 @media(max-width:600px){.stat-grid{grid-template-columns:repeat(2,1fr);}.form-row,.form-row.three,.form-row.four{grid-template-columns:1fr;}}
+
+/* ── MODAL ── */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;display:flex;align-items:center;justify-content:center;padding:16px;}
+.modal-overlay.hidden{display:none;}
+.modal-box{background:#fff;border-radius:10px;padding:20px;width:100%;max-width:540px;max-height:90vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,.2);}
+.modal-title{font-size:15px;font-weight:700;margin-bottom:14px;color:#1C1E20;border-bottom:2px solid #E8943A;padding-bottom:6px;}
+.modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:16px;padding-top:12px;border-top:1px solid #eee;}
 </style>
 </head>
 <body>
+
+<!-- EDIT MODAL -->
+<div class="modal-overlay hidden" id="edit-modal">
+  <div class="modal-box">
+    <div class="modal-title" id="modal-title">Bewerken</div>
+    <div id="modal-body"></div>
+    <div class="modal-actions">
+      <button class="btn" onclick="sluitModal()">Annuleren</button>
+      <button class="btn btn-o" onclick="slaModalOp()">Opslaan</button>
+    </div>
+  </div>
+</div>
 
 <!-- LOGIN OVERLAY -->
 <div id="login-overlay" style="position:fixed;inset:0;background:#1C1E20;z-index:9999;display:flex;align-items:center;justify-content:center;">
@@ -508,6 +527,232 @@ function addOrg() {
   cntContacts=1; renderOrgs();
 }
 
+
+// ── MODAL SYSTEEM ──
+let modalType = null, modalId = null;
+
+function sluitModal() {
+  document.getElementById('edit-modal').classList.add('hidden');
+  modalType = null; modalId = null;
+}
+
+function slaModalOp() {
+  if (modalType === 'org') slaOrgOp();
+  else if (modalType === 'workshop') slaWorkshopOp();
+  else if (modalType === 'deelnemer') slaDeelnemerOp();
+  else if (modalType === 'vrijwilliger') slaVrijwilligerOp();
+}
+
+function openModal(title) {
+  document.getElementById('modal-title').textContent = title;
+  document.getElementById('edit-modal').classList.remove('hidden');
+}
+
+// ── EDIT ORGANISATIE ──
+function editOrg(id) {
+  const o = db.organisaties.find(x => x.id === id); if (!o) return;
+  modalType = 'org'; modalId = id;
+  const c = (o.contacts || []);
+  let contactHtml = c.map((ct, i) => `
+    <div class="form-row three" id="ec-${i}">
+      <div><label>Naam</label><input id="ec-n-${i}" value="${ct.naam||''}"></div>
+      <div><label>Email</label><input type="email" id="ec-e-${i}" value="${ct.email||''}"></div>
+      <div><label>Telefoon</label><input id="ec-t-${i}" value="${ct.tel||''}">
+        <button class="btn btn-del btn-sm" onclick="this.closest('.form-row').remove()" style="margin-top:3px;width:100%;">✕</button>
+      </div>
+    </div>`).join('');
+  if (!c.length) contactHtml = `<div class="form-row three" id="ec-0">
+    <div><label>Naam</label><input id="ec-n-0"></div>
+    <div><label>Email</label><input type="email" id="ec-e-0"></div>
+    <div><label>Telefoon</label><input id="ec-t-0"></div></div>`;
+
+  document.getElementById('modal-body').innerHTML = `
+    <div class="form-row"><div><label>Naam organisatie *</label><input id="e-naam" value="${o.naam||''}"></div>
+    <div><label>Wijk</label><input id="e-wijk" value="${o.wijk||''}"></div></div>
+    <div class="form-row full"><div><label>Adres</label><input id="e-adres" value="${o.adres||''}"></div></div>
+    <div class="form-row full"><div><label>Status</label><select id="e-status">
+      <option value="aangeschreven" ${o.status==='aangeschreven'?'selected':''}>Aangeschreven</option>
+      <option value="interesse" ${o.status==='interesse'?'selected':''}>Interesse</option>
+      <option value="bevestigd" ${o.status==='bevestigd'?'selected':''}>Bevestigd</option>
+      <option value="afgevallen" ${o.status==='afgevallen'?'selected':''}>Afgevallen</option>
+    </select></div></div>
+    <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:#888;margin:10px 0 6px;">Contactpersonen</div>
+    <div id="ec-wrap">${contactHtml}</div>
+    <button class="btn btn-sm" onclick="voegEcToe()" style="margin-top:6px;">+ Contactpersoon</button>
+    <div class="form-row full" style="margin-top:10px;"><div><label>Notities</label>
+      <textarea id="e-notities" style="min-height:50px;">${o.notities||''}</textarea></div></div>`;
+  openModal('Organisatie bewerken');
+}
+
+function voegEcToe() {
+  const wrap = document.getElementById('ec-wrap');
+  const n = wrap.querySelectorAll('.form-row').length;
+  const div = document.createElement('div'); div.className='form-row three'; div.id='ec-'+n;
+  div.innerHTML=`<div><label>Naam</label><input id="ec-n-${n}"></div>
+    <div><label>Email</label><input type="email" id="ec-e-${n}"></div>
+    <div><label>Telefoon</label><input id="ec-t-${n}">
+      <button class="btn btn-del btn-sm" onclick="this.closest('.form-row').remove()" style="margin-top:3px;width:100%;">✕</button>
+    </div>`;
+  wrap.appendChild(div);
+}
+
+function slaOrgOp() {
+  const o = db.organisaties.find(x => x.id === modalId); if (!o) return;
+  o.naam = document.getElementById('e-naam').value.trim() || o.naam;
+  o.wijk = document.getElementById('e-wijk').value.trim();
+  o.adres = document.getElementById('e-adres').value.trim();
+  o.status = document.getElementById('e-status').value;
+  o.notities = document.getElementById('e-notities').value;
+  const contacts = [];
+  document.querySelectorAll('#ec-wrap .form-row').forEach(row => {
+    const i = row.id.split('-')[1];
+    const n = document.getElementById('ec-n-'+i);
+    if (n && n.value.trim()) contacts.push({
+      naam: n.value.trim(),
+      email: (document.getElementById('ec-e-'+i)?.value||'').trim(),
+      tel: (document.getElementById('ec-t-'+i)?.value||'').trim()
+    });
+  });
+  o.contacts = contacts;
+  save(); sluitModal(); renderOrgs();
+}
+
+// ── EDIT WORKSHOP ──
+function editWorkshop(id) {
+  const w = db.workshops.find(x => x.id === id); if (!w) return;
+  modalType = 'workshop'; modalId = id;
+  document.getElementById('modal-body').innerHTML = `
+    <div class="form-row three">
+      <div><label>Datum dagdeel 1</label><input type="date" id="e-dag1" value="${w.dag1||''}"></div>
+      <div><label>Datum dagdeel 2</label><input type="date" id="e-dag2" value="${w.dag2||''}"></div>
+      <div><label>Tijd</label><input id="e-tijd" value="${w.tijd||''}" placeholder="10.00–12.00"></div>
+    </div>
+    <div class="form-row full"><div><label>Adres</label><input id="e-adres" value="${w.adres||''}"></div></div>
+    <div class="form-row"><div><label>Contactpersoon</label><input id="e-contact" value="${w.contact||''}"></div>
+    <div><label>Bijzonderheden</label><input id="e-bijz" value="${w.bijz||''}"></div></div>`;
+  openModal('Workshop bewerken');
+}
+
+function slaWorkshopOp() {
+  const w = db.workshops.find(x => x.id === modalId); if (!w) return;
+  w.dag1 = document.getElementById('e-dag1').value || w.dag1;
+  w.dag2 = document.getElementById('e-dag2').value || w.dag2;
+  w.tijd = document.getElementById('e-tijd').value;
+  w.adres = document.getElementById('e-adres').value.trim();
+  w.contact = document.getElementById('e-contact').value.trim();
+  w.bijz = document.getElementById('e-bijz').value.trim();
+  save(); sluitModal(); renderWorkshops(); renderOrgs();
+}
+
+// ── EDIT DEELNEMER ──
+function editDeelnemer(id) {
+  const d = db.deelnemers.find(x => x.id === id); if (!d) return;
+  modalType = 'deelnemer'; modalId = id;
+  document.getElementById('modal-body').innerHTML = `
+    <div class="form-row">
+      <div><label>Naam *</label><input id="e-naam" value="${d.naam||''}"></div>
+    </div>
+    <div class="form-row four">
+      <div><label>Leeftijd</label><input type="number" id="e-leeft" value="${d.leeftijd||''}" min="18" max="99"></div>
+      <div><label>Apparaat</label><select id="e-app">
+        <option ${d.apparaat==='iPhone'?'selected':''}>iPhone</option>
+        <option ${d.apparaat==='Android'?'selected':''}>Android</option>
+        <option ${d.apparaat==='iPad'?'selected':''}>iPad</option>
+        <option ${d.apparaat==='Tablet'?'selected':''}>Tablet</option>
+        <option ${d.apparaat==='Anders'?'selected':''}>Anders</option>
+      </select></div>
+      <div><label>Telefoon</label><input id="e-tel" value="${d.tel||''}"></div>
+      <div><label>Email</label><input type="email" id="e-email" value="${d.email||''}"></div>
+    </div>
+    <div class="form-row full"><div><label>Evaluatie/notitie</label><input id="e-eval" value="${d.evaluatie||''}"></div></div>`;
+  openModal('Deelnemer bewerken');
+}
+
+function slaDeelnemerOp() {
+  const d = db.deelnemers.find(x => x.id === modalId); if (!d) return;
+  d.naam = document.getElementById('e-naam').value.trim() || d.naam;
+  d.leeftijd = document.getElementById('e-leeft').value;
+  d.apparaat = document.getElementById('e-app').value;
+  d.tel = document.getElementById('e-tel').value.trim();
+  d.email = document.getElementById('e-email').value.trim();
+  d.evaluatie = document.getElementById('e-eval').value;
+  save(); sluitModal(); renderDeelnemers(); renderOrgs(); renderWorkshops();
+}
+
+// ── EDIT VRIJWILLIGER ──
+function editVrijwilliger(id) {
+  const v = db.vrijwilligers.find(x => x.id === id); if (!v) return;
+  modalType = 'vrijwilliger'; modalId = id;
+  document.getElementById('modal-body').innerHTML = `
+    <div class="form-row">
+      <div><label>Naam *</label><input id="e-naam" value="${v.naam||''}"></div>
+      <div><label>Organisatie</label><input id="e-org" value="${v.org||''}"></div>
+    </div>
+    <div class="form-row">
+      <div><label>Dag 1</label><select id="e-d1">
+        <option value="" ${!v.dag1?'selected':''}>—</option>
+        <option value="ja" ${v.dag1==='ja'?'selected':''}>Ja</option>
+        <option value="nee" ${v.dag1==='nee'?'selected':''}>Nee</option>
+      </select></div>
+      <div><label>Dag 2</label><select id="e-d2">
+        <option value="" ${!v.dag2?'selected':''}>—</option>
+        <option value="ja" ${v.dag2==='ja'?'selected':''}>Ja</option>
+        <option value="nee" ${v.dag2==='nee'?'selected':''}>Nee</option>
+      </select></div>
+    </div>
+    <div class="form-row full"><div><label>Notitie</label><input id="e-notitie" value="${v.notitie||''}"></div></div>`;
+  openModal('Vrijwilliger bewerken');
+}
+
+function slaVrijwilligerOp() {
+  const v = db.vrijwilligers.find(x => x.id === modalId); if (!v) return;
+  v.naam = document.getElementById('e-naam').value.trim() || v.naam;
+  v.org = document.getElementById('e-org').value.trim();
+  v.dag1 = document.getElementById('e-d1').value;
+  v.dag2 = document.getElementById('e-d2').value;
+  v.notitie = document.getElementById('e-notitie').value;
+  save(); sluitModal(); renderVrijwilligers(); renderOrgs(); renderWorkshops();
+}
+
+// ── DEELNEMER TOEVOEGEN VANUIT WORKSHOP ──
+function addDeelnemerWs(wsId) {
+  const vn = document.getElementById('ws-d-vn-'+wsId).value.trim();
+  const an = document.getElementById('ws-d-an-'+wsId).value.trim();
+  if (!vn || !an) { alert('Vul voor- en achternaam in.'); return; }
+  db.deelnemers.push({
+    id: Date.now(), wsId,
+    naam: vn+' '+an,
+    leeftijd: document.getElementById('ws-d-leeft-'+wsId).value,
+    apparaat: document.getElementById('ws-d-app-'+wsId).value,
+    tel: document.getElementById('ws-d-tel-'+wsId).value,
+    email: document.getElementById('ws-d-email-'+wsId).value,
+    les1: '', les2: '', evaluatie: ''
+  });
+  save();
+  ['ws-d-vn-','ws-d-an-','ws-d-leeft-','ws-d-tel-','ws-d-email-'].forEach(p => {
+    const el = document.getElementById(p+wsId); if(el) el.value='';
+  });
+  renderWorkshops(); renderOrgs(); renderDeelnemers();
+}
+
+// ── VRIJWILLIGER TOEVOEGEN VANUIT WORKSHOP ──
+function addVrijwilligerWs(wsId) {
+  const naam = document.getElementById('ws-vw-naam-'+wsId).value.trim();
+  if (!naam) { alert('Vul naam in.'); return; }
+  db.vrijwilligers.push({
+    id: Date.now(), wsId, naam,
+    org: document.getElementById('ws-vw-org-'+wsId).value.trim(),
+    dag1: document.getElementById('ws-vw-d1-'+wsId).value,
+    dag2: document.getElementById('ws-vw-d2-'+wsId).value,
+    notitie: ''
+  });
+  save();
+  ['ws-vw-naam-','ws-vw-org-'].forEach(p => {
+    const el = document.getElementById(p+wsId); if(el) el.value='';
+  });
+  renderWorkshops(); renderOrgs(); renderVrijwilligers();
+}
+
 function deleteOrg(id){ if(!confirm('Organisatie verwijderen?'))return; db.organisaties=db.organisaties.filter(x=>x.id!==id); save(); renderOrgs(); }
 function toggleOrgBody(id){ const el=document.getElementById('org-body-'+id); if(el) el.classList.toggle('open'); }
 function saveOrgField(id,field,val){ const o=db.organisaties.find(x=>x.id===id); if(o){o[field]=val;save();} }
@@ -628,8 +873,9 @@ function renderOrgs() {
           })():'<div style="font-size:12px;color:#aaa;">Eerst workshop aanmaken.</div>'}
         </div>
 
-        ${isB?`<div class="org-section" style="background:#fafafa;">
-          <button class="btn btn-del btn-sm" onclick="deleteOrg(${o.id})">🗑 Organisatie verwijderen</button>
+        ${kanBewerken?`<div class="org-section" style="background:#fafafa;display:flex;gap:8px;">
+          <button class="btn btn-sm btn-o" onclick="editOrg(${o.id})">✏️ Bewerken</button>
+          ${isB?`<button class="btn btn-del btn-sm" onclick="deleteOrg(${o.id})">🗑 Verwijderen</button>`:''}
         </div>`:''}
 
       </div>
@@ -660,6 +906,21 @@ function renderWorkshops(preOrgId) {
     const n=d.length, a1=d.filter(x=>x.les1==='ja').length, a2=d.filter(x=>x.les2==='ja').length;
     const vw=db.vrijwilligers.filter(x=>x.wsId===w.id);
     const cal=calUrl(w);
+    const deelnRijen = d.length ? d.map(dl=>`
+      <div class="row-item" style="flex-wrap:wrap;gap:6px;padding:5px 0;border-bottom:1px solid #f0f0f0;">
+        <div style="flex:1;min-width:120px;font-size:12px;font-weight:500;">${dl.naam}
+          <span style="font-size:10px;color:#aaa;font-weight:400;">${dl.apparaat?' · '+dl.apparaat:''}</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:3px;">
+          <span style="font-size:10px;color:#888;font-weight:600;">D1</span>
+          <button class="aanw ${dl.les1==='ja'?'ja':''}" onclick="setAanwWs(${dl.id},'les1','ja',${w.id})">✓</button>
+          <button class="aanw ${dl.les1==='nee'?'nee':''}" onclick="setAanwWs(${dl.id},'les1','nee',${w.id})">✗</button>
+          <span style="font-size:10px;color:#888;font-weight:600;margin-left:5px;">D2</span>
+          <button class="aanw ${dl.les2==='ja'?'ja':''}" onclick="setAanwWs(${dl.id},'les2','ja',${w.id})">✓</button>
+          <button class="aanw ${dl.les2==='nee'?'nee':''}" onclick="setAanwWs(${dl.id},'les2','nee',${w.id})">✗</button>
+        </div>
+      </div>`).join('')
+      : '<div style="font-size:12px;color:#aaa;padding:6px 0;">Nog geen deelnemers.</div>';
     return `<div class="card">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;">
         <div style="flex:1;">
@@ -677,8 +938,63 @@ function renderWorkshops(preOrgId) {
         <div style="text-align:right;flex-shrink:0;">
           <div style="font-size:26px;font-weight:700;color:#E8943A;">${n}</div>
           <div style="font-size:10px;color:#888;">deelnemers</div>
-          ${isB?`<button class="btn btn-del btn-sm" onclick="deleteWorkshop(${w.id})" style="margin-top:8px;">🗑</button>`:''}
+          <div style="display:flex;flex-direction:column;gap:4px;margin-top:8px;align-items:flex-end;">
+            <button class="btn btn-sm btn-t" onclick="printLijst(${w.id})" style="font-size:11px;">🖨 Lijst</button>
+            <button class="btn btn-sm" onclick="toggleDeelnWs(${w.id},this)" style="font-size:11px;">👥 Deelnemers</button>
+            <button class="btn btn-sm btn-o" onclick="editWorkshop(${w.id})" style="font-size:11px;">✏️ Edit</button>
+            ${isB?`<button class="btn btn-del btn-sm" onclick="deleteWorkshop(${w.id})">🗑</button>`:''}
+          </div>
         </div>
+      </div>
+      <div id="deeln-ws-${w.id}" style="display:none;margin-top:10px;padding-top:8px;border-top:1px solid #eee;">
+
+        <!-- Aanwezigheid -->
+        <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#E8943A;margin-bottom:4px;">Aanwezigheid</div>
+        ${deelnRijen}
+
+        <!-- Vrijwilligers sectie -->
+        <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#4DA99A;margin:12px 0 6px;">Vrijwilligers (${vw.length})</div>
+        ${vw.length ? vw.map(v=>`
+          <div class="row-item" style="padding:4px 0;border-bottom:1px solid #f0f0f0;font-size:12px;">
+            <div style="flex:1;">${v.naam}${v.org?' <span style="color:#aaa;">('+v.org+')</span>':''}</div>
+            <span class="badge ${v.dag1==='ja'?'b-groen':'b-grijs'}">D1</span>
+            <span class="badge ${v.dag2==='ja'?'b-groen':'b-grijs'}">D2</span>
+            <button class="btn btn-sm btn-o" onclick="editVrijwilliger(${v.id})" style="font-size:10px;padding:2px 6px;">✏️</button>
+            <button class="btn btn-del btn-sm" onclick="deleteVw(${v.id})" style="font-size:10px;padding:2px 6px;">🗑</button>
+          </div>`).join('') : '<div style="font-size:12px;color:#aaa;margin-bottom:6px;">Nog geen vrijwilligers.</div>'}
+
+        <!-- Vrijwilliger toevoegen -->
+        <div style="background:#f9f9f9;border-radius:6px;padding:8px;margin-top:8px;">
+          <div style="font-size:10px;font-weight:700;color:#4DA99A;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">+ Vrijwilliger toevoegen</div>
+          <div class="form-row">
+            <div><label>Naam *</label><input id="ws-vw-naam-${w.id}" placeholder="Naam"></div>
+            <div><label>Organisatie</label><input id="ws-vw-org-${w.id}" placeholder="SMC / HvdW"></div>
+          </div>
+          <div class="form-row">
+            <div><label>Dag 1</label><select id="ws-vw-d1-${w.id}"><option value="">—</option><option value="ja">Ja</option><option value="nee">Nee</option></select></div>
+            <div><label>Dag 2</label><select id="ws-vw-d2-${w.id}"><option value="">—</option><option value="ja">Ja</option><option value="nee">Nee</option></select></div>
+          </div>
+          <button class="btn btn-sm" style="background:#4DA99A;color:#fff;border-color:#4DA99A;" onclick="addVrijwilligerWs(${w.id})">+ Toevoegen</button>
+        </div>
+
+        <!-- Deelnemer toevoegen -->
+        <div style="background:#f9f9f9;border-radius:6px;padding:8px;margin-top:8px;">
+          <div style="font-size:10px;font-weight:700;color:#E8943A;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">+ Deelnemer toevoegen</div>
+          <div class="form-row">
+            <div><label>Voornaam *</label><input id="ws-d-vn-${w.id}" placeholder="Voornaam"></div>
+            <div><label>Achternaam *</label><input id="ws-d-an-${w.id}" placeholder="Achternaam"></div>
+          </div>
+          <div class="form-row four">
+            <div><label>Leeftijd</label><input type="number" id="ws-d-leeft-${w.id}" placeholder="65" min="18" max="99"></div>
+            <div><label>Apparaat</label><select id="ws-d-app-${w.id}">
+              <option>iPhone</option><option>Android</option><option>iPad</option><option>Tablet</option><option>Anders</option>
+            </select></div>
+            <div><label>Telefoon</label><input id="ws-d-tel-${w.id}" placeholder="06-..."></div>
+            <div><label>Email</label><input type="email" id="ws-d-email-${w.id}" placeholder="email"></div>
+          </div>
+          <button class="btn btn-o btn-sm" onclick="addDeelnemerWs(${w.id})">+ Toevoegen</button>
+        </div>
+
       </div>
     </div>`;
   }).join('');
@@ -744,6 +1060,17 @@ function addWorkshop(){
   if(org.status!=='bevestigd'){org.status='bevestigd';}
   save(); renderWorkshops(); renderOrgs();
 }
+function toggleDeelnWs(wsId, btn) {
+  const el = document.getElementById('deeln-ws-'+wsId);
+  if (!el) return;
+  const open = el.style.display !== 'none';
+  el.style.display = open ? 'none' : 'block';
+  btn.textContent = open ? '👥 Deelnemers' : '👥 Inklappen';
+}
+function setAanwWs(deelnId, les, val, wsId) {
+  const d = db.deelnemers.find(x=>x.id===deelnId);
+  if (d) { d[les] = d[les]===val ? '' : val; save(); renderWorkshops(); renderOrgs(); }
+}
 function deleteWorkshop(id){
   if(!confirm('Workshop verwijderen?'))return;
   db.workshops=db.workshops.filter(w=>w.id!==id);
@@ -791,7 +1118,8 @@ function renderDeelnemers(){
         <button class="aanw ${d.les2==='ja'?'ja':''}" onclick="setAanw(${d.id},'les2','ja')">✓</button>
         <button class="aanw ${d.les2==='nee'?'nee':''}" onclick="setAanw(${d.id},'les2','nee')">✗</button>
       </div>
-      ${!isVW?`<input placeholder="Evaluatie..." value="${d.evaluatie||''}" onchange="setEval(${d.id},this.value)" style="width:130px;font-size:11px;padding:3px 7px;">
+      ${!isVW?`<input placeholder="Evaluatie..." value="${d.evaluatie||''}" onchange="setEval(${d.id},this.value)" style="width:100px;font-size:11px;padding:3px 7px;">
+      <button class="btn btn-sm btn-o" onclick="editDeelnemer(${d.id})" style="font-size:11px;">✏️</button>
       <button class="btn btn-del btn-sm" onclick="deleteDeelnemer(${d.id})">🗑</button>`:''}
     </div>`).join('')}
   </div>`;
@@ -818,7 +1146,8 @@ function renderVrijwilligers(){
       <div style="flex:1;"><div style="font-weight:500;">${v.naam}</div><div style="font-size:11px;color:#888;">${v.org||''}${v.notitie?' · '+v.notitie:''}</div></div>
       <span class="badge ${v.dag1==='ja'?'b-groen':v.dag1==='nee'?'b-rood':'b-grijs'}">D1</span>
       <span class="badge ${v.dag2==='ja'?'b-groen':v.dag2==='nee'?'b-rood':'b-grijs'}">D2</span>
-      ${!isVW?`<button class="btn btn-del btn-sm" onclick="deleteVw(${v.id})">🗑</button>`:''}
+      ${!isVW?`<button class="btn btn-sm btn-o" onclick="editVrijwilliger(${v.id})" style="font-size:11px;">✏️</button>
+      <button class="btn btn-del btn-sm" onclick="deleteVw(${v.id})">🗑</button>`:''}
     </div>`).join('')}
   </div>`;
 }
@@ -1426,6 +1755,142 @@ function printAll(wsId) {
   w.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><style>@page{size:A4 landscape;margin:0;}body{margin:0;}</style></head><body>' + pageHtml + '</body></html>');
   w.document.close(); w.focus();
   setTimeout(()=>w.print(), 800);
+}
+
+// ── PRESENTIELIJST PRINTEN ──
+function printLijst(wsId) {
+  const ws = db.workshops.find(w => w.id === wsId); if(!ws) return;
+  const deeln = db.deelnemers.filter(d => d.wsId === wsId);
+  const vw = db.vrijwilligers.filter(v => v.wsId === wsId);
+
+  // Lege rijen aanvullen tot minimaal 20
+  const LEEG = 20;
+  const aantalLeeg = Math.max(0, LEEG - deeln.length);
+
+  const vakje = '\u2610';
+  const rijen = [
+    ...deeln.map((d, i) => `
+      <tr>
+        <td style="text-align:center;color:#aaa;">${i+1}</td>
+        <td>${d.naam}</td>
+        <td style="text-align:center;">${d.apparaat||''}</td>
+        <td style="text-align:center;">${d.les1==='ja'?'<span style="color:#2e7d32;font-size:15px;">\u2713</span>':d.les1==='nee'?'<span style="color:#c00;font-size:13px;">\u2717</span>':'<span style="font-size:15px;color:#bbb;">\u2610</span>'}</td>
+        <td style="text-align:center;">${d.les2==='ja'?'<span style="color:#2e7d32;font-size:15px;">\u2713</span>':d.les2==='nee'?'<span style="color:#c00;font-size:13px;">\u2717</span>':'<span style="font-size:15px;color:#bbb;">\u2610</span>'}</td>
+        <td></td>
+      </tr>`),
+    ...Array.from({length: aantalLeeg}, (_, i) => `
+      <tr>
+        <td style="text-align:center;color:#aaa;">${deeln.length+i+1}</td>
+        <td></td>
+        <td></td>
+        <td style="text-align:center;font-size:15px;color:#bbb;">\u2610</td>
+        <td style="text-align:center;font-size:15px;color:#bbb;">\u2610</td>
+        <td></td>
+      </tr>`)
+  ].join('');
+
+  const vrijwRijen = vw.length ? vw.map(v => `
+    <tr>
+      <td>${v.naam}</td>
+      <td>${v.org||''}</td>
+      <td style="text-align:center;">${v.dag1==='ja'?'<span style="color:#2e7d32;">\u2713</span>':v.dag1==='nee'?'<span style="color:#c00;">\u2717</span>':'<span style="font-size:15px;color:#bbb;">\u2610</span>'}</td>
+      <td style="text-align:center;">${v.dag2==='ja'?'<span style="color:#2e7d32;">\u2713</span>':v.dag2==='nee'?'<span style="color:#c00;">\u2717</span>':'<span style="font-size:15px;color:#bbb;">\u2610</span>'}</td>
+    </tr>`).join('') : '<tr><td colspan="4" style="color:#aaa;font-style:italic;padding:6px 0;">Nog geen vrijwilligers</td></tr>';
+
+  const html = `<!DOCTYPE html>
+<html lang="nl"><head><meta charset="UTF-8">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;600;700&display=swap');
+  @page { size: A4 portrait; margin: 14mm 14mm 12mm 14mm; }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'Source Sans 3', Arial, sans-serif; font-size: 10pt; color: #1C1E20; }
+
+  .bar { height:5px; background:linear-gradient(to right,#E8943A 50%,#4DA99A 50%); margin-bottom:5mm; }
+  .header { display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:4mm; padding-bottom:3mm; border-bottom: 1.5px solid #1C1E20; }
+  .ws-naam { font-size:16pt; font-weight:700; }
+  .ws-sub  { font-size:9pt; color:#555; margin-top:2px; }
+  .meta-grid { display:grid; grid-template-columns:1fr 1fr; gap:1mm 8mm; margin-bottom:5mm; }
+  .meta-item label { font-size:7pt; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:#E8943A; display:block; }
+  .meta-item span  { font-size:9pt; }
+
+  .sec-label { font-size:8pt; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:#E8943A; border-bottom:2px solid #E8943A; display:inline-block; padding-bottom:1px; margin-bottom:3mm; }
+  .sec-label.teal { color:#4DA99A; border-color:#4DA99A; }
+
+  table { width:100%; border-collapse:collapse; margin-bottom:6mm; font-size:9.5pt; border:1px solid #ccc; }
+  th { background:#1C1E20; color:white; padding:5px 7px; text-align:left; font-size:8pt; letter-spacing:0.5px; font-weight:600; border-right:1px solid rgba(255,255,255,0.15); }
+  th:last-child { border-right:none; }
+  th.c { text-align:center; }
+  td { padding:6px 7px; border-bottom:1px solid #ddd; border-right:1px solid #ddd; vertical-align:middle; }
+  td:last-child { border-right:none; }
+  tr:nth-child(even) td { background:#f7f7f7; }
+  .num { width:24px; }
+  .check-col { width:42px; }
+  .opm-col { width:65px; }
+
+  .vw-table th { background:#4DA99A; }
+
+  .footer { margin-top:6mm; padding-top:3mm; border-top:1px solid #ddd; display:flex; justify-content:space-between; font-size:8pt; color:#888; }
+</style>
+</head><body>
+<div class="bar"></div>
+
+<div class="header">
+  <div>
+    <div class="ws-naam">${ws.org}${ws.wijk?' — '+ws.wijk:''}</div>
+    <div class="ws-sub">Samen Digitaal Sterk · Presentielijst</div>
+  </div>
+  <div style="text-align:right;font-size:9pt;color:#555;">
+    Afgedrukt: ${new Date().toLocaleDateString('nl-NL',{day:'numeric',month:'long',year:'numeric'})}
+  </div>
+</div>
+
+<div class="meta-grid">
+  <div class="meta-item"><label>Dagdeel 1</label><span>${fmtDate(ws.dag1)||'—'}</span></div>
+  <div class="meta-item"><label>Dagdeel 2</label><span>${fmtDate(ws.dag2)||'—'}</span></div>
+  <div class="meta-item"><label>Tijd</label><span>${ws.tijd||'—'}</span></div>
+  <div class="meta-item"><label>Adres</label><span>${ws.adres||'—'}</span></div>
+  ${ws.contact?`<div class="meta-item"><label>Contactpersoon</label><span>${ws.contact}</span></div>`:''}
+  ${ws.bijz?`<div class="meta-item"><label>Bijzonderheden</label><span>${ws.bijz}</span></div>`:''}
+</div>
+
+<div class="sec-label">Deelnemers (${deeln.length})</div>
+<table>
+  <thead>
+    <tr>
+      <th class="num">#</th>
+      <th>Naam</th>
+      <th style="width:60px;">Apparaat</th>
+      <th class="c check-col">D1</th>
+      <th class="c check-col">D2</th>
+      <th class="opm-col">Opmerking</th>
+    </tr>
+  </thead>
+  <tbody>${rijen}</tbody>
+</table>
+
+<div class="sec-label teal">Vrijwilligers</div>
+<table class="vw-table">
+  <thead>
+    <tr>
+      <th>Naam</th>
+      <th>Organisatie</th>
+      <th class="c" style="width:40px;">D1</th>
+      <th class="c" style="width:40px;">D2</th>
+    </tr>
+  </thead>
+  <tbody>${vrijwRijen}</tbody>
+</table>
+
+<div class="footer">
+  <span>Samen Digitaal Sterk · Gemeente Rotterdam 2026</span>
+  <span>Rob Bezemer Photography · Stichting Mens Centraal</span>
+</div>
+</body></html>`;
+
+  const pw = window.open('','_blank');
+  pw.document.write(html);
+  pw.document.close(); pw.focus();
+  setTimeout(()=>pw.print(), 600);
 }
 </script>
 </body>
