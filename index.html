@@ -110,20 +110,7 @@ input[readonly]{background:#f9f9f9;color:#888;}
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;display:flex;align-items:center;justify-content:center;padding:16px;}
 .modal-overlay.hidden{display:none;}
 .modal-box{background:#fff;border-radius:10px;padding:20px;width:100%;max-width:540px;max-height:90vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,.2);}
-.preview-box{background:#fff;border-radius:10px;padding:24px;width:100%;max-width:1000px;max-height:92vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,.25);}
-.preview-box table{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:12px;border:2px solid #888;}
-.preview-box th{background:#1C1E20;color:#fff;padding:6px 8px;text-align:left;font-size:11px;border-right:2px solid rgba(255,255,255,.2);}
-.preview-box th:last-child{border-right:none;}
-.preview-box th.c{text-align:center;}
-.preview-box td{padding:7px 8px;border-bottom:1.5px solid #bbb;border-right:1.5px solid #bbb;vertical-align:middle;}
-.preview-box td:last-child{border-right:none;}
-.preview-box tr:nth-child(even) td{background:#f9f9f9;}
-.preview-box .vw-th{background:#4DA99A;}
-.prev-aanw{width:28px;height:24px;border-radius:4px;border:1px solid #ddd;background:#f5f5f5;cursor:pointer;font-size:12px;}
-.prev-aanw.ja{background:#e8f5e9;border-color:#4caf50;color:#2e7d32;}
-.prev-aanw.nee{background:#fce4ec;border-color:#e91e63;color:#880e4f;}
-.prev-inp{border:1px solid #e0e0e0;border-radius:4px;padding:3px 5px;font-size:11px;font-family:inherit;background:#fafafa;width:100%;}
-.prev-inp:focus{outline:none;border-color:#E8943A;background:#fff;}
+
 .sec-lbl{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#E8943A;border-bottom:2px solid #E8943A;display:inline-block;padding-bottom:1px;margin:10px 0 6px;}
 .sec-lbl.teal{color:#4DA99A;border-color:#4DA99A;}
 .modal-title{font-size:15px;font-weight:700;margin-bottom:14px;color:#1C1E20;border-bottom:2px solid #E8943A;padding-bottom:6px;}
@@ -145,48 +132,6 @@ input[readonly]{background:#f9f9f9;color:#888;}
 </div>
 
 
-<!-- LIJST PREVIEW MODAL -->
-<div class="modal-overlay hidden" id="preview-modal">
-  <div class="preview-box">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-      <div style="font-size:15px;font-weight:700;color:#1C1E20;" id="prev-titel">Presentielijst</div>
-      <button class="btn" onclick="document.getElementById('preview-modal').classList.add('hidden')">✕ Sluiten</button>
-    </div>
-    <div id="prev-meta" style="display:grid;grid-template-columns:1fr 1fr;gap:4px 16px;margin-bottom:12px;font-size:12px;color:#555;"></div>
-    <div class="sec-lbl" id="prev-deeln-lbl">Deelnemers</div>
-    <table id="prev-deeln-tbl">
-      <thead><tr>
-        <th style="width:22px;" class="c">#</th>
-        <th style="width:130px;">Naam</th>
-        <th>Adres</th>
-        <th style="width:70px;">Postcode</th>
-        <th style="width:90px;">Woonplaats</th>
-        <th style="width:30px;" class="c">Lft</th>
-        <th style="width:65px;">Apparaat</th>
-        <th style="width:50px;" class="c">D1</th>
-        <th style="width:50px;" class="c">D2</th>
-        <th style="width:34px;" class="c">Toest.</th>
-        <th style="width:28px;" class="c"></th>
-      </tr></thead>
-      <tbody id="prev-deeln-body"></tbody>
-    </table>
-    <div class="sec-lbl teal">Vrijwilligers</div>
-    <table>
-      <thead><tr>
-        <th class="vw-th">Naam</th>
-        <th class="vw-th">Organisatie</th>
-        <th class="vw-th c" style="width:38px;">D1</th>
-        <th class="vw-th c" style="width:38px;">D2</th>
-      </tr></thead>
-      <tbody id="prev-vw-body"></tbody>
-    </table>
-    <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:12px;padding-top:10px;border-top:1px solid #eee;">
-      <button class="btn" onclick="document.getElementById('preview-modal').classList.add('hidden')">Annuleren</button>
-      <button class="btn btn-o" id="prev-print-btn" onclick="doPrint()">🖨 Afdrukken</button>
-    </div>
-  </div>
-</div>
-
 <!-- LOGIN OVERLAY -->
 <div id="login-overlay" style="position:fixed;inset:0;background:#1C1E20;z-index:9999;display:flex;align-items:center;justify-content:center;">
   <div style="background:white;border-radius:16px;padding:32px 28px;max-width:320px;width:90%;text-align:center;box-shadow:0 8px 40px rgba(0,0,0,.4);">
@@ -206,7 +151,7 @@ input[readonly]{background:#f9f9f9;color:#888;}
   <div class="topbar-logo">📋</div>
   <div>
     <div style="font-size:15px;font-weight:600;">Samen Digitaal Sterk</div>
-    <div style="font-size:11px;color:#aaa;">Beheer · v8f · Rotterdam 2026</div>
+    <div style="font-size:11px;color:#aaa;">Beheer · v8i · Rotterdam 2026</div>
   </div>
   <div style="margin-left:auto;display:flex;align-items:center;gap:12px;">
     <span id="rol-badge" style="display:none;font-size:11px;color:#aaa;"></span>
@@ -1014,7 +959,7 @@ function renderWorkshops(preOrgId) {
           <div style="font-size:26px;font-weight:700;color:#E8943A;">${n}</div>
           <div style="font-size:10px;color:#888;">deelnemers</div>
           <div style="display:flex;flex-direction:column;gap:4px;margin-top:8px;align-items:flex-end;">
-            <button class="btn btn-sm btn-t" onclick="printLijst(${w.id})" style="font-size:11px;">🖨 Lijst</button>
+            <button class="btn btn-sm btn-t" onclick="printD2Lijst(${w.id})" style="font-size:11px;background:#4DA99A;border-color:#4DA99A;color:#fff;">🖨 D2-lijst</button>
             <button class="btn btn-sm" onclick="toggleDeelnWs(${w.id},this)" style="font-size:11px;">👥 Deelnemers</button>
             <button class="btn btn-sm btn-o" onclick="editWorkshop(${w.id})" style="font-size:11px;">✏️ Edit</button>
             ${isB?`<button class="btn btn-del btn-sm" onclick="deleteWorkshop(${w.id})">🗑</button>`:''}
@@ -1064,11 +1009,13 @@ function renderWorkshops(preOrgId) {
             <div><label>Postcode</label><input id="ws-d-pc-${w.id}" placeholder="1234 AB"></div>
             <div><label>Woonplaats</label><input id="ws-d-wp-${w.id}" placeholder="Rotterdam"></div>
           </div>
-          <div class="form-row four">
+          <div class="form-row">
             <div><label>Leeftijd</label><input type="number" id="ws-d-leeft-${w.id}" placeholder="65" min="18" max="99"></div>
             <div><label>Apparaat</label><select id="ws-d-app-${w.id}">
               <option>iPhone</option><option>Android</option><option>iPad</option><option>Tablet</option><option>Anders</option>
             </select></div>
+          </div>
+          <div class="form-row">
             <div><label>Telefoon</label><input id="ws-d-tel-${w.id}" placeholder="06-..."></div>
             <div><label>Email</label><input type="email" id="ws-d-email-${w.id}" placeholder="email"></div>
           </div>
@@ -1483,7 +1430,7 @@ const DEELNAME_PAGE = `<div class="page">
       <div class="field-row full"><div class="field"><label>Adres</label><div class="line"></div></div></div>
       <div class="field-row two">
         <div class="field"><label>Telefoonnummer</label><div class="line"></div></div>
-        <div class="field"><label>E-mailadres (optioneel)</label><div class="line"></div></div>
+        <div class="field"><label>E-mailadres</label><div class="line"></div></div>
       </div>
       <div class="field" style="width:38mm;margin-top:2mm;"><label>Leeftijd</label><div class="line-sm"></div></div>
     </div>
@@ -1499,11 +1446,9 @@ const DEELNAME_PAGE = `<div class="page">
     </div>
     <div class="section">
       <div class="sec-label">Aanwezigheid</div>
-      <div style="font-size:10pt;color:#1C1E20;margin-bottom:2mm;">De workshop bestaat uit twee dagdelen. Welke kunt u bijwonen?</div>
       <div class="check-row">
-        <div class="check-item"><div class="box o"></div> Dagdeel 1 — Veilig Online &amp; AI</div>
-        <div class="check-item"><div class="box o"></div> Dagdeel 2 — Slim fotograferen</div>
-        <div class="check-item"><div class="box t"></div> Beide dagdelen</div>
+        <div class="check-item"><div class="box o"></div> DAG1_PLACEHOLDER &mdash; Veilig Online &amp; AI</div>
+        <div class="check-item"><div class="box t"></div> DAG2_PLACEHOLDER &mdash; Slim fotograferen</div>
       </div>
     </div>
     <div class="section">
@@ -1837,140 +1782,12 @@ function printAll(wsId) {
   setTimeout(()=>w.print(), 800);
 }
 
-// ── PRESENTIELIJST — PREVIEW + PRINT ──
-let _prevWsId = null;
-
-// ── PRESENTIELIJST POPUP + PRINT ──
-function printLijst(wsId) {
-  _prevWsId = wsId;
-  renderPreview();
-  document.getElementById('preview-modal').classList.remove('hidden');
-}
-
-function renderPreview() {
-  const wsId = _prevWsId;
+// ── PRESENTIELIJST ──
+function printD2Lijst(wsId) {
   const ws = db.workshops.find(w => w.id === wsId); if(!ws) return;
-  const deeln = db.deelnemers.filter(d => d.wsId === wsId);
-  const vw = db.vrijwilligers.filter(v => v.wsId === wsId);
+  const d1aanwezig = db.deelnemers.filter(d => d.wsId === wsId && d.les1 === 'ja')
+    .sort((a,b) => a.naam.localeCompare(b.naam, 'nl'));
 
-  // Titel en meta
-  document.getElementById('prev-titel').textContent = (ws.org + (ws.wijk ? ' — ' + ws.wijk : '')) + ' · Presentielijst';
-  document.getElementById('prev-meta').innerHTML = `
-    <div><strong>Dagdeel 1</strong><br>${fmtDate(ws.dag1)||'—'}</div>
-    <div><strong>Dagdeel 2</strong><br>${fmtDate(ws.dag2)||'—'}</div>
-    <div><strong>Tijd</strong><br>${ws.tijd||'—'}</div>
-    <div><strong>Adres</strong><br>${ws.adres||'—'}</div>
-    ${ws.contact?'<div><strong>Contactpersoon</strong><br>'+ws.contact+'</div>':''}
-    ${ws.bijz?'<div><strong>Bijzonderheden</strong><br>'+ws.bijz+'</div>':''}`;
-  document.getElementById('prev-deeln-lbl').textContent = 'Deelnemers (' + deeln.length + ')';
-
-  // Altijd 20 rijen tonen (aangevuld met lege invoerbare rijen)
-  const TOTAAL = 20;
-  const deelnBody = document.getElementById('prev-deeln-body');
-
-  let rijHtml = '';
-  for (let i = 0; i < TOTAAL; i++) {
-    const d = deeln[i] || null;
-    const nr = i + 1;
-    const id = d ? d.id : null;
-    rijHtml += `<tr data-idx="${i}">
-      <td style="text-align:center;color:#aaa;font-size:11px;">${nr}</td>
-      <td><input class="prev-inp" value="${d?d.naam:''}" onchange="prevSaveVeld(${id||'null'},${i},'naam',this.value,${wsId})" placeholder="Naam" style="width:100%;"></td>
-      <td><input class="prev-inp" value="${d?d.adres||'':''}" onchange="prevSaveVeld(${id||'null'},${i},'adres',this.value,${wsId})" placeholder="Adres" style="width:100%;"></td>
-      <td><input class="prev-inp" value="${d?d.postcode||'':''}" onchange="prevSaveVeld(${id||'null'},${i},'postcode',this.value,${wsId})" placeholder="1234AB" style="width:100%;"></td>
-      <td><input class="prev-inp" value="${d?d.woonplaats||'':''}" onchange="prevSaveVeld(${id||'null'},${i},'woonplaats',this.value,${wsId})" placeholder="Stad" style="width:100%;"></td>
-      <td><input class="prev-inp" type="number" value="${d?d.leeftijd||'':''}" onchange="prevSaveVeld(${id||'null'},${i},'leeftijd',this.value,${wsId})" placeholder="65" style="width:100%;text-align:center;" min="18" max="99"></td>
-      <td>
-        <select class="prev-inp" onchange="prevSaveVeld(${id||'null'},${i},'apparaat',this.value,${wsId})" style="width:100%;">
-          <option value="" ${!d||!d.apparaat?'selected':''}>—</option>
-          <option value="iPhone" ${d&&d.apparaat==='iPhone'?'selected':''}>iPhone</option>
-          <option value="Android" ${d&&d.apparaat==='Android'?'selected':''}>Android</option>
-          <option value="iPad" ${d&&d.apparaat==='iPad'?'selected':''}>iPad</option>
-          <option value="Tablet" ${d&&d.apparaat==='Tablet'?'selected':''}>Tablet</option>
-          <option value="Anders" ${d&&d.apparaat==='Anders'?'selected':''}>Anders</option>
-        </select>
-      </td>
-      <td style="text-align:center;">
-        <button class="prev-aanw ${d&&d.les1==='ja'?'ja':''}" onclick="prevSetAanwNw(${id||'null'},${i},'les1','ja',this,${wsId})">✓</button>
-        <button class="prev-aanw ${d&&d.les1==='nee'?'nee':''}" onclick="prevSetAanwNw(${id||'null'},${i},'les1','nee',this,${wsId})">✗</button>
-      </td>
-      <td style="text-align:center;">
-        <button class="prev-aanw ${d&&d.les2==='ja'?'ja':''}" onclick="prevSetAanwNw(${id||'null'},${i},'les2','ja',this,${wsId})">✓</button>
-        <button class="prev-aanw ${d&&d.les2==='nee'?'nee':''}" onclick="prevSetAanwNw(${id||'null'},${i},'les2','nee',this,${wsId})">✗</button>
-      </td>
-      <td style="text-align:center;font-size:15px;">${d?'<span style="color:#aaa;">☐</span>':'<span style="color:#ddd;">☐</span>'}</td>
-      <td style="text-align:center;">${d?`<button class="btn btn-del btn-sm" onclick="prevVerwijder(${d.id},${wsId})" style="font-size:10px;padding:2px 5px;">🗑</button>`:'<span style="color:#ddd;font-size:10px;">—</span>'}</td>
-    </tr>`;
-  }
-
-  deelnBody.innerHTML = rijHtml;
-
-  // Vrijwilligers
-  const vwBody = document.getElementById('prev-vw-body');
-  vwBody.innerHTML = vw.length ? vw.map(v => `
-    <tr>
-      <td>${v.naam}</td>
-      <td>${v.org||''}</td>
-      <td style="text-align:center;">${v.dag1==='ja'?'<span style="color:#2e7d32;">✓</span>':v.dag1==='nee'?'<span style="color:#c00;">✗</span>':'<span style="color:#ddd;">☐</span>'}</td>
-      <td style="text-align:center;">${v.dag2==='ja'?'<span style="color:#2e7d32;">✓</span>':v.dag2==='nee'?'<span style="color:#c00;">✗</span>':'<span style="color:#ddd;">☐</span>'}</td>
-    </tr>`).join('')
-    : '<tr><td colspan="4" style="color:#aaa;font-style:italic;padding:6px 0;">Nog geen vrijwilligers</td></tr>';
-}
-
-function prevSaveVeld(deelnId, idx, veld, val, wsId) {
-  // Bestaande deelnemer updaten
-  if (deelnId !== null && deelnId !== 'null') {
-    const d = db.deelnemers.find(x => x.id === deelnId);
-    if (d) { d[veld] = val; save(); renderWorkshops(); renderOrgs(); return; }
-  }
-  // Nieuwe deelnemer aanmaken als naam wordt ingevuld
-  if (veld === 'naam' && val.trim()) {
-    const nieuw = {id: Date.now()+idx, wsId, naam: val.trim(), adres:'', postcode:'', woonplaats:'', leeftijd:'', apparaat:'', tel:'', email:'', les1:'', les2:'', opmerking:''};
-    db.deelnemers.push(nieuw);
-    save();
-    renderWorkshops(); renderOrgs(); renderDeelnemers();
-    // Herrender preview zodat nieuwe deelnemer id's kloppen
-    setTimeout(() => renderPreview(), 50);
-  }
-}
-
-function prevSetAanwNw(deelnId, idx, les, val, btn, wsId) {
-  if (deelnId === null || deelnId === 'null') return;
-  const d = db.deelnemers.find(x => x.id === deelnId); if(!d) return;
-  d[les] = d[les] === val ? '' : val;
-  save();
-  const row = btn.closest('tr');
-  const btns = row.querySelectorAll('.prev-aanw');
-  if (les === 'les1') {
-    btns[0].className = 'prev-aanw' + (d.les1==='ja'?' ja':'');
-    btns[1].className = 'prev-aanw' + (d.les1==='nee'?' nee':'');
-  } else {
-    btns[2].className = 'prev-aanw' + (d.les2==='ja'?' ja':'');
-    btns[3].className = 'prev-aanw' + (d.les2==='nee'?' nee':'');
-  }
-  renderWorkshops(); renderOrgs();
-}
-
-function prevVerwijder(deelnId, wsId) {
-  if (!confirm('Deelnemer verwijderen?')) return;
-  db.deelnemers = db.deelnemers.filter(x => x.id !== deelnId);
-  save(); renderWorkshops(); renderOrgs(); renderDeelnemers();
-  renderPreview();
-}
-
-function prevSetAanw(deelnId, les, val, btn) {
-  // legacy — vervangen door prevSetAanwNw
-  prevSetAanwNw(deelnId, 0, les, val, btn, _prevWsId);
-}
-
-function doPrint() {
-  const wsId = _prevWsId;
-  const ws = db.workshops.find(w => w.id === wsId); if(!ws) return;
-  const deeln = db.deelnemers.filter(d => d.wsId === wsId);
-  const vw = db.vrijwilligers.filter(v => v.wsId === wsId);
-  const TOTAAL = 20;
-
-  // Logo src's ophalen uit deelname-formulier template
   const rbSrcMatch  = DEELNAME_PAGE.match(/class="logo-rb"\s+src="([^"]+)"/);
   const rotSrcMatch = DEELNAME_PAGE.match(/class="logo-rot"\s+src="([^"]+)"/);
   const mcSrcMatch  = DEELNAME_PAGE.match(/class="logo-mc"\s+src="([^"]+)"/);
@@ -1978,120 +1795,94 @@ function doPrint() {
   const rotSrc = rotSrcMatch ? rotSrcMatch[1] : '';
   const mcSrc  = mcSrcMatch  ? mcSrcMatch[1]  : '';
 
-  // Bouw array van 20 slots
-  const slots = Array.from({length: TOTAAL}, (_, i) => deeln[i] || null);
+  const TOTAAL = Math.max(15, d1aanwezig.length + 2);
+  const slots  = Array.from({length: TOTAAL}, (_, i) => d1aanwezig[i] || null);
 
-  function rijHtml(slot, nr) {
-    const d = slot;
-    return `<tr>
-      <td class="c num">${nr}</td>
-      <td class="naam">${d?d.naam:''}</td>
-      <td class="adres">${d?d.adres||'':''}</td>
-      <td class="pc">${d?d.postcode||'':''}</td>
-      <td class="wp">${d?d.woonplaats||'':''}</td>
-      <td class="c smal">${d?d.leeftijd||'':''}</td>
-      <td class="app">${d?d.apparaat||'':''}</td>
-      <td class="c vink">${d?(d.les1==='ja'?'<b style="color:#2e7d32;">&#10003;</b>':d.les1==='nee'?'<span style="color:#c00;">&#10007;</span>':'&#9744;'):'&#9744;'}</td>
-      <td class="c vink">${d?(d.les2==='ja'?'<b style="color:#2e7d32;">&#10003;</b>':d.les2==='nee'?'<span style="color:#c00;">&#10007;</span>':'&#9744;'):'&#9744;'}</td>
-      <td class="c vink">&#9744;</td>
-    </tr>`;
-  }
-
-  function paginaHtml(slots10, pNr, isLaatste) {
-    const vrijwHtml = isLaatste ? `
-      <div class="sec-label teal" style="margin-top:5mm;">Vrijwilligers</div>
-      <table class="vw-table">
-        <thead><tr><th>Naam</th><th>Organisatie</th><th class="c" style="width:32px;">D1</th><th class="c" style="width:32px;">D2</th></tr></thead>
-        <tbody>${vw.length?vw.map(v=>`<tr><td>${v.naam}</td><td>${v.org||''}</td><td class="c">${v.dag1==='ja'?'<b style="color:#2e7d32;">&#10003;</b>':'&#9744;'}</td><td class="c">${v.dag2==='ja'?'<b style="color:#2e7d32;">&#10003;</b>':'&#9744;'}</td></tr>`).join(''):'<tr><td colspan="4" style="color:#aaa;font-style:italic;">Nog geen vrijwilligers</td></tr>'}</tbody>
-      </table>
-      <div class="toestemming">
-        <strong>Toestemming</strong> — Uw gegevens worden uitsluitend gebruikt voor de organisatie van deze workshop en de rapportage aan Gemeente Rotterdam. Ze worden niet gedeeld met derden.
-      </div>` : '';
-    return `<div class="pagina">
-      <div class="bar"></div>
-      <div class="header">
-        ${rbSrc ? `<img class="logo-rb" src="${rbSrc}">` : ''}
-        <div style="flex:1;padding:0 4mm;text-align:center;">
-          <div class="ws-naam">${ws.org}${ws.wijk?' — '+ws.wijk:''}</div>
-          <div class="ws-sub">Samen Digitaal Sterk · Presentielijst · Pagina ${pNr} van 2 &nbsp;|&nbsp; ${fmtDate(ws.dag1)||'—'} &amp; ${fmtDate(ws.dag2)||'—'}${ws.tijd?' · '+ws.tijd:''}</div>
-          <div class="ws-sub">Afgedrukt: ${new Date().toLocaleDateString('nl-NL',{day:'numeric',month:'long',year:'numeric'})}</div>
-        </div>
-        <div style="display:flex;gap:3mm;align-items:center;">
-          ${rotSrc ? `<img class="logo-rot" src="${rotSrc}">` : ''}
-          ${mcSrc ? `<img class="logo-mc" src="${mcSrc}">` : ''}
-        </div>
-      </div>
-      ${pNr===1?`<div class="meta-grid">
-        <div class="meta-item"><label>Adres</label><span>${ws.adres||'—'}</span></div>
-        ${ws.contact?'<div class="meta-item"><label>Contactpersoon</label><span>'+ws.contact+'</span></div>':''}
-        ${ws.bijz?'<div class="meta-item"><label>Bijzonderheden</label><span>'+ws.bijz+'</span></div>':''}
-      </div>`:''}
-      <div class="sec-label">Deelnemers (${deeln.length}) · rijen ${(pNr-1)*10+1}–${pNr*10}</div>
-      <table>
-        <thead><tr>
-          <th class="c num">#</th>
-          <th class="naam">Naam</th>
-          <th class="adres">Adres</th>
-          <th class="pc">Postcode</th>
-          <th class="wp">Woonplaats</th>
-          <th class="c smal">Lft</th>
-          <th class="app">Apparaat</th>
-          <th class="c vink">D1</th>
-          <th class="c vink">D2</th>
-          <th class="c vink">Toest.</th>
-        </tr></thead>
-        <tbody>${slots10.map((s,i)=>rijHtml(s,(pNr-1)*10+i+1)).join('')}</tbody>
-      </table>
-      ${vrijwHtml}
-      <div class="footer">
-        <span>Samen Digitaal Sterk · Gemeente Rotterdam 2026</span>
-        <span>Rob Bezemer Photography · Stichting Mens Centraal</span>
-      </div>
-    </div>`;
-  }
+  const rijHtml = (d, nr) => `<tr style="height:9mm;">
+    <td class="c num">${nr}</td>
+    <td>${d ? d.naam : ''}</td>
+    <td class="c vink">&#9744;</td>
+  </tr>`;
 
   const html = `<!DOCTYPE html><html lang="nl"><head><meta charset="UTF-8">
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;600;700&display=swap');
-  @page { size: A4 landscape; margin: 10mm 10mm 8mm 10mm; }
+  @page { size:A4 portrait; margin:0; }
   * { margin:0; padding:0; box-sizing:border-box; }
-  body { font-family:'Source Sans 3',Arial,sans-serif; font-size:8.5pt; color:#1C1E20; }
-  .pagina { page-break-after:always; }
-  .pagina:last-child { page-break-after:avoid; }
-  .bar { height:4px; background:linear-gradient(to right,#E8943A 50%,#4DA99A 50%); margin-bottom:3.5mm; }
-  .header { display:flex; justify-content:space-between; align-items:center; margin-bottom:3mm; padding-bottom:2mm; border-bottom:2px solid #1C1E20; }
-  .logo-rb  { height:12mm; width:12mm; object-fit:contain; flex-shrink:0; }
-  .logo-rot { height:8mm;  width:38mm; object-fit:contain; }
-  .logo-mc  { height:10mm; width:32mm; object-fit:contain; }
-  .ws-naam { font-size:13pt; font-weight:700; }
-  .ws-sub  { font-size:8pt; color:#555; margin-top:1px; }
-  .meta-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:1mm 8mm; margin-bottom:3.5mm; }
-  .meta-item label { font-size:6.5pt; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; color:#E8943A; display:block; }
-  .meta-item span  { font-size:8pt; }
-  .sec-label { font-size:7pt; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:#E8943A; border-bottom:2px solid #E8943A; display:inline-block; padding-bottom:1px; margin-bottom:2.5mm; }
-  .sec-label.teal { color:#4DA99A; border-color:#4DA99A; }
-  table { width:100%; border-collapse:collapse; margin-bottom:3mm; font-size:8pt; border:2px solid #888; }
-  th { background:#1C1E20; color:#fff; padding:5px 6px; text-align:left; font-size:7pt; font-weight:600; border-right:2px solid rgba(255,255,255,.2); }
+  html,body { background:white; font-family:'Source Sans 3',Arial,sans-serif; color:#1C1E20; margin:0; }
+  .page { width:190mm; min-height:277mm; background:white; display:flex; flex-direction:column; margin:0 auto; padding:0 12mm; }
+  .bar { height:6px; background:linear-gradient(to right,#E8943A 50%,#4DA99A 50%); margin:0 -12mm; }
+  .header { padding:4mm 0 3mm; display:flex; align-items:center; justify-content:space-between; position:relative; flex-shrink:0; }
+  .header::after { content:''; position:absolute; bottom:0; left:0; right:0; height:2px; background:linear-gradient(to right,#E8943A 50%,#4DA99A 50%); }
+  .logo-rb  { height:18mm; width:18mm; object-fit:contain; }
+  .logo-rot { height:10mm; width:52mm; object-fit:contain; }
+  .logo-mc  { height:15mm; width:46mm; object-fit:contain; }
+  .body { flex:1; padding:4mm 0 3mm; display:flex; flex-direction:column; }
+  .title-block { margin-bottom:4mm; }
+  .title-supra { font-size:8pt; letter-spacing:3px; text-transform:uppercase; color:#1C1E20; margin-bottom:1px; }
+  .title-main  { font-size:22pt; font-weight:700; text-transform:uppercase; color:#1C1E20; line-height:1.1; }
+  .title-rule  { display:flex; align-items:center; margin-top:3px; }
+  .rule-o { height:2.5px; background:#E8943A; flex:1; }
+  .rule-t { height:2.5px; background:#4DA99A; flex:1; }
+  .rule-d { width:5px; height:5px; background:#1C1E20; transform:rotate(45deg); margin:0 5px; flex-shrink:0; }
+  .ws-meta { display:grid; grid-template-columns:1fr 1fr; gap:2mm 6mm; margin-bottom:5mm; }
+  .ws-field label { font-size:8pt; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:#E8943A; display:block; margin-bottom:1px; }
+  .ws-field.teal label { color:#4DA99A; }
+  .ws-field .val { font-size:10pt; border-bottom:1.5px solid #1C1E20; height:7mm; display:flex; align-items:flex-end; padding-bottom:1px; }
+  .sec-label { font-size:8pt; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:#4DA99A; border-bottom:2px solid #4DA99A; display:inline-block; padding-bottom:1px; margin-bottom:3mm; }
+  table { width:100%; border-collapse:collapse; font-size:10.5pt; border:2px solid #bbb; }
+  th { background:#4DA99A; color:#fff; padding:6px 10px; text-align:left; font-size:8.5pt; font-weight:600; border-right:1.5px solid rgba(255,255,255,.3); }
   th.c { text-align:center; }
   th:last-child { border-right:none; }
-  td { padding:6px 6px; border-bottom:1.5px solid #bbb; border-right:1.5px solid #bbb; vertical-align:middle; }
+  td { padding:3px 10px; border-bottom:1.5px solid #ddd; border-right:1.5px solid #ddd; vertical-align:middle; }
   td.c { text-align:center; }
   td:last-child { border-right:none; }
-  tr:nth-child(even) td { background:#f7f7f7; }
-  .vw-table th { background:#4DA99A; }
-  .num  { width:18px; }
-  .naam { width:110px; }
-  .adres{ width:130px; }
-  .pc   { width:58px; }
-  .wp   { width:80px; }
-  .smal { width:24px; }
-  .app  { width:55px; }
-  .vink { width:34px; }
-  .toestemming { font-size:7pt; color:#555; border:1px solid #ddd; border-radius:3px; padding:4px 7px; margin-top:3mm; }
-  .footer { margin-top:3mm; padding-top:2mm; border-top:1px solid #ddd; display:flex; justify-content:space-between; font-size:7pt; color:#888; }
+  tr:nth-child(even) td { background:#f0faf8; }
+  .num  { width:28px; }
+  .vink { width:50px; font-size:17pt; }
+  .footer-row { margin-top:auto; padding-top:3mm; display:flex; justify-content:space-between; font-size:7pt; color:#888; }
 </style></head><body>
-${paginaHtml(slots.slice(0,10), 1, false)}
-${paginaHtml(slots.slice(10,20), 2, true)}
+<div class="page">
+  <div class="bar"></div>
+  <div class="header">
+    ${rbSrc ? `<img class="logo-rb" src="${rbSrc}">` : ''}
+    ${rotSrc ? `<img class="logo-rot" src="${rotSrc}">` : ''}
+    ${mcSrc  ? `<img class="logo-mc"  src="${mcSrc}">` : ''}
+  </div>
+  <div class="body">
+    <div class="title-block">
+      <div class="title-supra">Samen Digitaal Sterk &nbsp;&middot;&nbsp; Rotterdam 2026</div>
+      <div class="title-main">Aanwezigheidslijst</div>
+      <div class="title-rule">
+        <div class="rule-o"></div><div class="rule-d"></div><div class="rule-t"></div>
+      </div>
+    </div>
+    <div class="ws-meta">
+      <div class="ws-field"><label>Organisatie</label>
+        <div class="val">${ws.org}${ws.wijk ? ' \u2014 ' + ws.wijk : ''}</div></div>
+      <div class="ws-field teal"><label>Datum dagdeel 2</label>
+        <div class="val">${fmtDate(ws.dag2)||'\u2014'}</div></div>
+      <div class="ws-field"><label>Locatie</label>
+        <div class="val">${ws.adres||'\u2014'}</div></div>
+      <div class="ws-field teal"><label>Thema</label>
+        <div class="val">Slim fotograferen${ws.tijd ? ' &nbsp;&middot;&nbsp; ' + ws.tijd : ''}</div></div>
+    </div>
+    <div class="sec-label">Deelnemers dagdeel 1 &nbsp;(${d1aanwezig.length})</div>
+    <table>
+      <thead><tr>
+        <th class="c num">#</th>
+        <th>Naam</th>
+        <th class="c vink">Aanwezig D2</th>
+      </tr></thead>
+      <tbody>${slots.map((s,i) => rijHtml(s, i+1)).join('')}</tbody>
+    </table>
+    <div class="footer-row">
+      <span>Samen Digitaal Sterk &middot; Gemeente Rotterdam 2026</span>
+      <span>Afgedrukt: ${new Date().toLocaleDateString('nl-NL',{day:'numeric',month:'long',year:'numeric'})}</span>
+    </div>
+  </div>
+  <div class="bar"></div>
+</div>
 </body></html>`;
 
   const pw = window.open('','_blank');
