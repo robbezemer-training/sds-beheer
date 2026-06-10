@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Samen Digitaal Sterk — Beheer v8b</title>
+<title>Samen Digitaal Sterk — Beheer v8e</title>
 <style>
 @font-face {
   font-family: 'Bebas Neue';
@@ -110,6 +110,22 @@ input[readonly]{background:#f9f9f9;color:#888;}
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;display:flex;align-items:center;justify-content:center;padding:16px;}
 .modal-overlay.hidden{display:none;}
 .modal-box{background:#fff;border-radius:10px;padding:20px;width:100%;max-width:540px;max-height:90vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,.2);}
+.preview-box{background:#fff;border-radius:10px;padding:24px;width:100%;max-width:1000px;max-height:92vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,.25);}
+.preview-box table{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:12px;border:2px solid #888;}
+.preview-box th{background:#1C1E20;color:#fff;padding:6px 8px;text-align:left;font-size:11px;border-right:2px solid rgba(255,255,255,.2);}
+.preview-box th:last-child{border-right:none;}
+.preview-box th.c{text-align:center;}
+.preview-box td{padding:7px 8px;border-bottom:1.5px solid #bbb;border-right:1.5px solid #bbb;vertical-align:middle;}
+.preview-box td:last-child{border-right:none;}
+.preview-box tr:nth-child(even) td{background:#f9f9f9;}
+.preview-box .vw-th{background:#4DA99A;}
+.prev-aanw{width:28px;height:24px;border-radius:4px;border:1px solid #ddd;background:#f5f5f5;cursor:pointer;font-size:12px;}
+.prev-aanw.ja{background:#e8f5e9;border-color:#4caf50;color:#2e7d32;}
+.prev-aanw.nee{background:#fce4ec;border-color:#e91e63;color:#880e4f;}
+.prev-inp{border:1px solid #e0e0e0;border-radius:4px;padding:3px 5px;font-size:11px;font-family:inherit;background:#fafafa;width:100%;}
+.prev-inp:focus{outline:none;border-color:#E8943A;background:#fff;}
+.sec-lbl{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#E8943A;border-bottom:2px solid #E8943A;display:inline-block;padding-bottom:1px;margin:10px 0 6px;}
+.sec-lbl.teal{color:#4DA99A;border-color:#4DA99A;}
 .modal-title{font-size:15px;font-weight:700;margin-bottom:14px;color:#1C1E20;border-bottom:2px solid #E8943A;padding-bottom:6px;}
 .modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:16px;padding-top:12px;border-top:1px solid #eee;}
 </style>
@@ -124,6 +140,49 @@ input[readonly]{background:#f9f9f9;color:#888;}
     <div class="modal-actions">
       <button class="btn" onclick="sluitModal()">Annuleren</button>
       <button class="btn btn-o" onclick="slaModalOp()">Opslaan</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- LIJST PREVIEW MODAL -->
+<div class="modal-overlay hidden" id="preview-modal">
+  <div class="preview-box">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+      <div style="font-size:15px;font-weight:700;color:#1C1E20;" id="prev-titel">Presentielijst</div>
+      <button class="btn" onclick="document.getElementById('preview-modal').classList.add('hidden')">✕ Sluiten</button>
+    </div>
+    <div id="prev-meta" style="display:grid;grid-template-columns:1fr 1fr;gap:4px 16px;margin-bottom:12px;font-size:12px;color:#555;"></div>
+    <div class="sec-lbl" id="prev-deeln-lbl">Deelnemers</div>
+    <table id="prev-deeln-tbl">
+      <thead><tr>
+        <th style="width:22px;" class="c">#</th>
+        <th style="width:130px;">Naam</th>
+        <th>Adres</th>
+        <th style="width:70px;">Postcode</th>
+        <th style="width:90px;">Woonplaats</th>
+        <th style="width:30px;" class="c">Lft</th>
+        <th style="width:65px;">Apparaat</th>
+        <th style="width:50px;" class="c">D1</th>
+        <th style="width:50px;" class="c">D2</th>
+        <th style="width:34px;" class="c">Toest.</th>
+        <th style="width:28px;" class="c"></th>
+      </tr></thead>
+      <tbody id="prev-deeln-body"></tbody>
+    </table>
+    <div class="sec-lbl teal">Vrijwilligers</div>
+    <table>
+      <thead><tr>
+        <th class="vw-th">Naam</th>
+        <th class="vw-th">Organisatie</th>
+        <th class="vw-th c" style="width:38px;">D1</th>
+        <th class="vw-th c" style="width:38px;">D2</th>
+      </tr></thead>
+      <tbody id="prev-vw-body"></tbody>
+    </table>
+    <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:12px;padding-top:10px;border-top:1px solid #eee;">
+      <button class="btn" onclick="document.getElementById('preview-modal').classList.add('hidden')">Annuleren</button>
+      <button class="btn btn-o" id="prev-print-btn" onclick="doPrint()">🖨 Afdrukken</button>
     </div>
   </div>
 </div>
@@ -212,6 +271,11 @@ input[readonly]{background:#f9f9f9;color:#888;}
       <div class="form-row">
         <div><label>Voornaam *</label><input id="d-vnaam" placeholder="Voornaam"></div>
         <div><label>Achternaam *</label><input id="d-anaam" placeholder="Achternaam"></div>
+      </div>
+      <div class="form-row">
+        <div><label>Adres</label><input id="d-adres" placeholder="Straat en huisnummer"></div>
+        <div><label>Postcode</label><input id="d-postcode" placeholder="1234 AB"></div>
+        <div><label>Woonplaats</label><input id="d-woonplaats" placeholder="Rotterdam"></div>
       </div>
       <div class="form-row four">
         <div><label>Leeftijd</label><input type="number" id="d-leeft" placeholder="65" min="18" max="99"></div>
@@ -652,6 +716,11 @@ function editDeelnemer(id) {
     <div class="form-row">
       <div><label>Naam *</label><input id="e-naam" value="${d.naam||''}"></div>
     </div>
+    <div class="form-row">
+      <div><label>Adres</label><input id="e-adres2" value="${d.adres||''}" placeholder="Straat en huisnummer"></div>
+      <div><label>Postcode</label><input id="e-postcode" value="${d.postcode||''}" placeholder="1234 AB"></div>
+      <div><label>Woonplaats</label><input id="e-woonplaats" value="${d.woonplaats||''}" placeholder="Rotterdam"></div>
+    </div>
     <div class="form-row four">
       <div><label>Leeftijd</label><input type="number" id="e-leeft" value="${d.leeftijd||''}" min="18" max="99"></div>
       <div><label>Apparaat</label><select id="e-app">
@@ -664,18 +733,21 @@ function editDeelnemer(id) {
       <div><label>Telefoon</label><input id="e-tel" value="${d.tel||''}"></div>
       <div><label>Email</label><input type="email" id="e-email" value="${d.email||''}"></div>
     </div>
-    <div class="form-row full"><div><label>Evaluatie/notitie</label><input id="e-eval" value="${d.evaluatie||''}"></div></div>`;
+    <div class="form-row full"><div><label>Opmerking</label><input id="e-eval" value="${d.opmerking||''}"></div></div>`;
   openModal('Deelnemer bewerken');
 }
 
 function slaDeelnemerOp() {
   const d = db.deelnemers.find(x => x.id === modalId); if (!d) return;
   d.naam = document.getElementById('e-naam').value.trim() || d.naam;
+  d.adres = document.getElementById('e-adres2').value.trim();
+  d.postcode = document.getElementById('e-postcode').value.trim();
+  d.woonplaats = document.getElementById('e-woonplaats').value.trim();
   d.leeftijd = document.getElementById('e-leeft').value;
   d.apparaat = document.getElementById('e-app').value;
   d.tel = document.getElementById('e-tel').value.trim();
   d.email = document.getElementById('e-email').value.trim();
-  d.evaluatie = document.getElementById('e-eval').value;
+  d.opmerking = document.getElementById('e-eval').value;
   save(); sluitModal(); renderDeelnemers(); renderOrgs(); renderWorkshops();
 }
 
@@ -722,14 +794,17 @@ function addDeelnemerWs(wsId) {
   db.deelnemers.push({
     id: Date.now(), wsId,
     naam: vn+' '+an,
+    adres: (document.getElementById('ws-d-adres-'+wsId)||{}).value||'',
+    postcode: (document.getElementById('ws-d-pc-'+wsId)||{}).value||'',
+    woonplaats: (document.getElementById('ws-d-wp-'+wsId)||{}).value||'',
     leeftijd: document.getElementById('ws-d-leeft-'+wsId).value,
     apparaat: document.getElementById('ws-d-app-'+wsId).value,
     tel: document.getElementById('ws-d-tel-'+wsId).value,
     email: document.getElementById('ws-d-email-'+wsId).value,
-    les1: '', les2: '', evaluatie: ''
+    les1: '', les2: '', opmerking: ''
   });
   save();
-  ['ws-d-vn-','ws-d-an-','ws-d-leeft-','ws-d-tel-','ws-d-email-'].forEach(p => {
+  ['ws-d-vn-','ws-d-an-','ws-d-adres-','ws-d-pc-','ws-d-wp-','ws-d-leeft-','ws-d-tel-','ws-d-email-'].forEach(p => {
     const el = document.getElementById(p+wsId); if(el) el.value='';
   });
   renderWorkshops(); renderOrgs(); renderDeelnemers();
@@ -984,6 +1059,11 @@ function renderWorkshops(preOrgId) {
             <div><label>Voornaam *</label><input id="ws-d-vn-${w.id}" placeholder="Voornaam"></div>
             <div><label>Achternaam *</label><input id="ws-d-an-${w.id}" placeholder="Achternaam"></div>
           </div>
+          <div class="form-row">
+            <div><label>Adres</label><input id="ws-d-adres-${w.id}" placeholder="Straat en huisnummer"></div>
+            <div><label>Postcode</label><input id="ws-d-pc-${w.id}" placeholder="1234 AB"></div>
+            <div><label>Woonplaats</label><input id="ws-d-wp-${w.id}" placeholder="Rotterdam"></div>
+          </div>
           <div class="form-row four">
             <div><label>Leeftijd</label><input type="number" id="ws-d-leeft-${w.id}" placeholder="65" min="18" max="99"></div>
             <div><label>Apparaat</label><select id="ws-d-app-${w.id}">
@@ -1093,11 +1173,11 @@ function addDeelnemer(){
   const wsId=parseInt(document.getElementById('sel-ws-d').value);
   const vn=document.getElementById('d-vnaam').value.trim(), an=document.getElementById('d-anaam').value.trim();
   if(!wsId||!vn||!an){alert('Vul naam in.');return;}
-  db.deelnemers.push({id:Date.now(),wsId,naam:vn+' '+an,leeftijd:document.getElementById('d-leeft').value,apparaat:document.getElementById('d-app').value,tel:document.getElementById('d-tel').value,email:document.getElementById('d-email').value,les1:'',les2:'',evaluatie:''});
-  save(); ['d-vnaam','d-anaam','d-leeft','d-tel','d-email'].forEach(id=>document.getElementById(id).value=''); renderDeelnemers(); renderOrgs();
+  db.deelnemers.push({id:Date.now(),wsId,naam:vn+' '+an,adres:document.getElementById('d-adres').value.trim(),postcode:document.getElementById('d-postcode').value.trim(),woonplaats:document.getElementById('d-woonplaats').value.trim(),leeftijd:document.getElementById('d-leeft').value,apparaat:document.getElementById('d-app').value,tel:document.getElementById('d-tel').value,email:document.getElementById('d-email').value,les1:'',les2:'',opmerking:''});
+  save(); ['d-vnaam','d-anaam','d-adres','d-postcode','d-woonplaats','d-leeft','d-tel','d-email'].forEach(id=>document.getElementById(id).value=''); renderDeelnemers(); renderOrgs();
 }
 function setAanw(id,les,val){const d=db.deelnemers.find(x=>x.id===id);if(d){d[les]=d[les]===val?'':val;save();renderDeelnemers();renderOrgs();}}
-function setEval(id,val){const d=db.deelnemers.find(x=>x.id===id);if(d){d.evaluatie=val;save();}}
+function setEval(id,val){const d=db.deelnemers.find(x=>x.id===id);if(d){d.opmerking=val;save();}}
 function deleteDeelnemer(id){db.deelnemers=db.deelnemers.filter(x=>x.id!==id);save();renderDeelnemers();renderOrgs();}
 function renderDeelnemers(){
   const wsId=parseInt(document.getElementById('sel-ws-d').value);
@@ -1118,7 +1198,7 @@ function renderDeelnemers(){
         <button class="aanw ${d.les2==='ja'?'ja':''}" onclick="setAanw(${d.id},'les2','ja')">✓</button>
         <button class="aanw ${d.les2==='nee'?'nee':''}" onclick="setAanw(${d.id},'les2','nee')">✗</button>
       </div>
-      ${!isVW?`<input placeholder="Evaluatie..." value="${d.evaluatie||''}" onchange="setEval(${d.id},this.value)" style="width:100px;font-size:11px;padding:3px 7px;">
+      ${!isVW?`<input placeholder="Opmerking..." value="${d.opmerking||''}" onchange="setEval(${d.id},this.value)" style="width:100px;font-size:11px;padding:3px 7px;">
       <button class="btn btn-sm btn-o" onclick="editDeelnemer(${d.id})" style="font-size:11px;">✏️</button>
       <button class="btn btn-del btn-sm" onclick="deleteDeelnemer(${d.id})">🗑</button>`:''}
     </div>`).join('')}
@@ -1757,134 +1837,248 @@ function printAll(wsId) {
   setTimeout(()=>w.print(), 800);
 }
 
-// ── PRESENTIELIJST PRINTEN ──
+// ── PRESENTIELIJST — PREVIEW + PRINT ──
+let _prevWsId = null;
+
+// ── PRESENTIELIJST POPUP + PRINT ──
 function printLijst(wsId) {
+  _prevWsId = wsId;
+  renderPreview();
+  document.getElementById('preview-modal').classList.remove('hidden');
+}
+
+function renderPreview() {
+  const wsId = _prevWsId;
   const ws = db.workshops.find(w => w.id === wsId); if(!ws) return;
   const deeln = db.deelnemers.filter(d => d.wsId === wsId);
   const vw = db.vrijwilligers.filter(v => v.wsId === wsId);
 
-  // Lege rijen aanvullen tot minimaal 20
-  const LEEG = 20;
-  const aantalLeeg = Math.max(0, LEEG - deeln.length);
+  // Titel en meta
+  document.getElementById('prev-titel').textContent = (ws.org + (ws.wijk ? ' — ' + ws.wijk : '')) + ' · Presentielijst';
+  document.getElementById('prev-meta').innerHTML = `
+    <div><strong>Dagdeel 1</strong><br>${fmtDate(ws.dag1)||'—'}</div>
+    <div><strong>Dagdeel 2</strong><br>${fmtDate(ws.dag2)||'—'}</div>
+    <div><strong>Tijd</strong><br>${ws.tijd||'—'}</div>
+    <div><strong>Adres</strong><br>${ws.adres||'—'}</div>
+    ${ws.contact?'<div><strong>Contactpersoon</strong><br>'+ws.contact+'</div>':''}
+    ${ws.bijz?'<div><strong>Bijzonderheden</strong><br>'+ws.bijz+'</div>':''}`;
+  document.getElementById('prev-deeln-lbl').textContent = 'Deelnemers (' + deeln.length + ')';
 
-  const vakje = '\u2610';
-  const rijen = [
-    ...deeln.map((d, i) => `
-      <tr>
-        <td style="text-align:center;color:#aaa;">${i+1}</td>
-        <td>${d.naam}</td>
-        <td style="text-align:center;">${d.apparaat||''}</td>
-        <td style="text-align:center;">${d.les1==='ja'?'<span style="color:#2e7d32;font-size:15px;">\u2713</span>':d.les1==='nee'?'<span style="color:#c00;font-size:13px;">\u2717</span>':'<span style="font-size:15px;color:#bbb;">\u2610</span>'}</td>
-        <td style="text-align:center;">${d.les2==='ja'?'<span style="color:#2e7d32;font-size:15px;">\u2713</span>':d.les2==='nee'?'<span style="color:#c00;font-size:13px;">\u2717</span>':'<span style="font-size:15px;color:#bbb;">\u2610</span>'}</td>
-        <td></td>
-      </tr>`),
-    ...Array.from({length: aantalLeeg}, (_, i) => `
-      <tr>
-        <td style="text-align:center;color:#aaa;">${deeln.length+i+1}</td>
-        <td></td>
-        <td></td>
-        <td style="text-align:center;font-size:15px;color:#bbb;">\u2610</td>
-        <td style="text-align:center;font-size:15px;color:#bbb;">\u2610</td>
-        <td></td>
-      </tr>`)
-  ].join('');
+  // Altijd 20 rijen tonen (aangevuld met lege invoerbare rijen)
+  const TOTAAL = 20;
+  const deelnBody = document.getElementById('prev-deeln-body');
 
-  const vrijwRijen = vw.length ? vw.map(v => `
+  let rijHtml = '';
+  for (let i = 0; i < TOTAAL; i++) {
+    const d = deeln[i] || null;
+    const nr = i + 1;
+    const id = d ? d.id : null;
+    rijHtml += `<tr data-idx="${i}">
+      <td style="text-align:center;color:#aaa;font-size:11px;">${nr}</td>
+      <td><input class="prev-inp" value="${d?d.naam:''}" onchange="prevSaveVeld(${id||'null'},${i},'naam',this.value,${wsId})" placeholder="Naam" style="width:100%;"></td>
+      <td><input class="prev-inp" value="${d?d.adres||'':''}" onchange="prevSaveVeld(${id||'null'},${i},'adres',this.value,${wsId})" placeholder="Adres" style="width:100%;"></td>
+      <td><input class="prev-inp" value="${d?d.postcode||'':''}" onchange="prevSaveVeld(${id||'null'},${i},'postcode',this.value,${wsId})" placeholder="1234AB" style="width:100%;"></td>
+      <td><input class="prev-inp" value="${d?d.woonplaats||'':''}" onchange="prevSaveVeld(${id||'null'},${i},'woonplaats',this.value,${wsId})" placeholder="Stad" style="width:100%;"></td>
+      <td><input class="prev-inp" type="number" value="${d?d.leeftijd||'':''}" onchange="prevSaveVeld(${id||'null'},${i},'leeftijd',this.value,${wsId})" placeholder="65" style="width:100%;text-align:center;" min="18" max="99"></td>
+      <td>
+        <select class="prev-inp" onchange="prevSaveVeld(${id||'null'},${i},'apparaat',this.value,${wsId})" style="width:100%;">
+          <option value="" ${!d||!d.apparaat?'selected':''}>—</option>
+          <option value="iPhone" ${d&&d.apparaat==='iPhone'?'selected':''}>iPhone</option>
+          <option value="Android" ${d&&d.apparaat==='Android'?'selected':''}>Android</option>
+          <option value="iPad" ${d&&d.apparaat==='iPad'?'selected':''}>iPad</option>
+          <option value="Tablet" ${d&&d.apparaat==='Tablet'?'selected':''}>Tablet</option>
+          <option value="Anders" ${d&&d.apparaat==='Anders'?'selected':''}>Anders</option>
+        </select>
+      </td>
+      <td style="text-align:center;">
+        <button class="prev-aanw ${d&&d.les1==='ja'?'ja':''}" onclick="prevSetAanwNw(${id||'null'},${i},'les1','ja',this,${wsId})">✓</button>
+        <button class="prev-aanw ${d&&d.les1==='nee'?'nee':''}" onclick="prevSetAanwNw(${id||'null'},${i},'les1','nee',this,${wsId})">✗</button>
+      </td>
+      <td style="text-align:center;">
+        <button class="prev-aanw ${d&&d.les2==='ja'?'ja':''}" onclick="prevSetAanwNw(${id||'null'},${i},'les2','ja',this,${wsId})">✓</button>
+        <button class="prev-aanw ${d&&d.les2==='nee'?'nee':''}" onclick="prevSetAanwNw(${id||'null'},${i},'les2','nee',this,${wsId})">✗</button>
+      </td>
+      <td style="text-align:center;font-size:15px;">${d?'<span style="color:#aaa;">☐</span>':'<span style="color:#ddd;">☐</span>'}</td>
+      <td style="text-align:center;">${d?`<button class="btn btn-del btn-sm" onclick="prevVerwijder(${d.id},${wsId})" style="font-size:10px;padding:2px 5px;">🗑</button>`:'<span style="color:#ddd;font-size:10px;">—</span>'}</td>
+    </tr>`;
+  }
+
+  deelnBody.innerHTML = rijHtml;
+
+  // Vrijwilligers
+  const vwBody = document.getElementById('prev-vw-body');
+  vwBody.innerHTML = vw.length ? vw.map(v => `
     <tr>
       <td>${v.naam}</td>
       <td>${v.org||''}</td>
-      <td style="text-align:center;">${v.dag1==='ja'?'<span style="color:#2e7d32;">\u2713</span>':v.dag1==='nee'?'<span style="color:#c00;">\u2717</span>':'<span style="font-size:15px;color:#bbb;">\u2610</span>'}</td>
-      <td style="text-align:center;">${v.dag2==='ja'?'<span style="color:#2e7d32;">\u2713</span>':v.dag2==='nee'?'<span style="color:#c00;">\u2717</span>':'<span style="font-size:15px;color:#bbb;">\u2610</span>'}</td>
-    </tr>`).join('') : '<tr><td colspan="4" style="color:#aaa;font-style:italic;padding:6px 0;">Nog geen vrijwilligers</td></tr>';
+      <td style="text-align:center;">${v.dag1==='ja'?'<span style="color:#2e7d32;">✓</span>':v.dag1==='nee'?'<span style="color:#c00;">✗</span>':'<span style="color:#ddd;">☐</span>'}</td>
+      <td style="text-align:center;">${v.dag2==='ja'?'<span style="color:#2e7d32;">✓</span>':v.dag2==='nee'?'<span style="color:#c00;">✗</span>':'<span style="color:#ddd;">☐</span>'}</td>
+    </tr>`).join('')
+    : '<tr><td colspan="4" style="color:#aaa;font-style:italic;padding:6px 0;">Nog geen vrijwilligers</td></tr>';
+}
 
-  const html = `<!DOCTYPE html>
-<html lang="nl"><head><meta charset="UTF-8">
+function prevSaveVeld(deelnId, idx, veld, val, wsId) {
+  // Bestaande deelnemer updaten
+  if (deelnId !== null && deelnId !== 'null') {
+    const d = db.deelnemers.find(x => x.id === deelnId);
+    if (d) { d[veld] = val; save(); renderWorkshops(); renderOrgs(); return; }
+  }
+  // Nieuwe deelnemer aanmaken als naam wordt ingevuld
+  if (veld === 'naam' && val.trim()) {
+    const nieuw = {id: Date.now()+idx, wsId, naam: val.trim(), adres:'', postcode:'', woonplaats:'', leeftijd:'', apparaat:'', tel:'', email:'', les1:'', les2:'', opmerking:''};
+    db.deelnemers.push(nieuw);
+    save();
+    renderWorkshops(); renderOrgs(); renderDeelnemers();
+    // Herrender preview zodat nieuwe deelnemer id's kloppen
+    setTimeout(() => renderPreview(), 50);
+  }
+}
+
+function prevSetAanwNw(deelnId, idx, les, val, btn, wsId) {
+  if (deelnId === null || deelnId === 'null') return;
+  const d = db.deelnemers.find(x => x.id === deelnId); if(!d) return;
+  d[les] = d[les] === val ? '' : val;
+  save();
+  const row = btn.closest('tr');
+  const btns = row.querySelectorAll('.prev-aanw');
+  if (les === 'les1') {
+    btns[0].className = 'prev-aanw' + (d.les1==='ja'?' ja':'');
+    btns[1].className = 'prev-aanw' + (d.les1==='nee'?' nee':'');
+  } else {
+    btns[2].className = 'prev-aanw' + (d.les2==='ja'?' ja':'');
+    btns[3].className = 'prev-aanw' + (d.les2==='nee'?' nee':'');
+  }
+  renderWorkshops(); renderOrgs();
+}
+
+function prevVerwijder(deelnId, wsId) {
+  if (!confirm('Deelnemer verwijderen?')) return;
+  db.deelnemers = db.deelnemers.filter(x => x.id !== deelnId);
+  save(); renderWorkshops(); renderOrgs(); renderDeelnemers();
+  renderPreview();
+}
+
+function prevSetAanw(deelnId, les, val, btn) {
+  // legacy — vervangen door prevSetAanwNw
+  prevSetAanwNw(deelnId, 0, les, val, btn, _prevWsId);
+}
+
+function doPrint() {
+  const wsId = _prevWsId;
+  const ws = db.workshops.find(w => w.id === wsId); if(!ws) return;
+  const deeln = db.deelnemers.filter(d => d.wsId === wsId);
+  const vw = db.vrijwilligers.filter(v => v.wsId === wsId);
+  const TOTAAL = 20;
+
+  // Bouw array van 20 slots
+  const slots = Array.from({length: TOTAAL}, (_, i) => deeln[i] || null);
+
+  function rijHtml(slot, nr) {
+    const d = slot;
+    return `<tr>
+      <td class="c num">${nr}</td>
+      <td class="naam">${d?d.naam:''}</td>
+      <td class="adres">${d?d.adres||'':''}</td>
+      <td class="pc">${d?d.postcode||'':''}</td>
+      <td class="wp">${d?d.woonplaats||'':''}</td>
+      <td class="c smal">${d?d.leeftijd||'':''}</td>
+      <td class="app">${d?d.apparaat||'':''}</td>
+      <td class="c vink">${d?(d.les1==='ja'?'<b style="color:#2e7d32;">&#10003;</b>':d.les1==='nee'?'<span style="color:#c00;">&#10007;</span>':'&#9744;'):'&#9744;'}</td>
+      <td class="c vink">${d?(d.les2==='ja'?'<b style="color:#2e7d32;">&#10003;</b>':d.les2==='nee'?'<span style="color:#c00;">&#10007;</span>':'&#9744;'):'&#9744;'}</td>
+      <td class="c vink">&#9744;</td>
+    </tr>`;
+  }
+
+  function paginaHtml(slots10, pNr, isLaatste) {
+    const vrijwHtml = isLaatste ? `
+      <div class="sec-label teal" style="margin-top:5mm;">Vrijwilligers</div>
+      <table class="vw-table">
+        <thead><tr><th>Naam</th><th>Organisatie</th><th class="c" style="width:32px;">D1</th><th class="c" style="width:32px;">D2</th></tr></thead>
+        <tbody>${vw.length?vw.map(v=>`<tr><td>${v.naam}</td><td>${v.org||''}</td><td class="c">${v.dag1==='ja'?'<b style="color:#2e7d32;">&#10003;</b>':'&#9744;'}</td><td class="c">${v.dag2==='ja'?'<b style="color:#2e7d32;">&#10003;</b>':'&#9744;'}</td></tr>`).join(''):'<tr><td colspan="4" style="color:#aaa;font-style:italic;">Nog geen vrijwilligers</td></tr>'}</tbody>
+      </table>
+      <div class="toestemming">
+        <strong>Toestemming</strong> — Uw gegevens worden uitsluitend gebruikt voor de organisatie van deze workshop en de rapportage aan Gemeente Rotterdam. Ze worden niet gedeeld met derden.
+      </div>` : '';
+    return `<div class="pagina">
+      <div class="bar"></div>
+      <div class="header">
+        <div>
+          <div class="ws-naam">${ws.org}${ws.wijk?' — '+ws.wijk:''}</div>
+          <div class="ws-sub">Samen Digitaal Sterk · Presentielijst · Pagina ${pNr} van 2</div>
+        </div>
+        <div style="text-align:right;font-size:8pt;color:#555;">
+          ${fmtDate(ws.dag1)||'—'} &amp; ${fmtDate(ws.dag2)||'—'} · ${ws.tijd||''}<br>
+          Afgedrukt: ${new Date().toLocaleDateString('nl-NL',{day:'numeric',month:'long',year:'numeric'})}
+        </div>
+      </div>
+      ${pNr===1?`<div class="meta-grid">
+        <div class="meta-item"><label>Adres</label><span>${ws.adres||'—'}</span></div>
+        ${ws.contact?'<div class="meta-item"><label>Contactpersoon</label><span>'+ws.contact+'</span></div>':''}
+        ${ws.bijz?'<div class="meta-item"><label>Bijzonderheden</label><span>'+ws.bijz+'</span></div>':''}
+      </div>`:''}
+      <div class="sec-label">Deelnemers (${deeln.length}) · rijen ${(pNr-1)*10+1}–${pNr*10}</div>
+      <table>
+        <thead><tr>
+          <th class="c num">#</th>
+          <th class="naam">Naam</th>
+          <th class="adres">Adres</th>
+          <th class="pc">Postcode</th>
+          <th class="wp">Woonplaats</th>
+          <th class="c smal">Lft</th>
+          <th class="app">Apparaat</th>
+          <th class="c vink">D1</th>
+          <th class="c vink">D2</th>
+          <th class="c vink">Toest.</th>
+        </tr></thead>
+        <tbody>${slots10.map((s,i)=>rijHtml(s,(pNr-1)*10+i+1)).join('')}</tbody>
+      </table>
+      ${vrijwHtml}
+      <div class="footer">
+        <span>Samen Digitaal Sterk · Gemeente Rotterdam 2026</span>
+        <span>Rob Bezemer Photography · Stichting Mens Centraal</span>
+      </div>
+    </div>`;
+  }
+
+  const html = `<!DOCTYPE html><html lang="nl"><head><meta charset="UTF-8">
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;600;700&display=swap');
-  @page { size: A4 portrait; margin: 14mm 14mm 12mm 14mm; }
+  @page { size: A4 landscape; margin: 12mm 18mm 10mm 18mm; }
   * { margin:0; padding:0; box-sizing:border-box; }
-  body { font-family:'Source Sans 3', Arial, sans-serif; font-size: 10pt; color: #1C1E20; }
-
-  .bar { height:5px; background:linear-gradient(to right,#E8943A 50%,#4DA99A 50%); margin-bottom:5mm; }
-  .header { display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:4mm; padding-bottom:3mm; border-bottom: 1.5px solid #1C1E20; }
-  .ws-naam { font-size:16pt; font-weight:700; }
-  .ws-sub  { font-size:9pt; color:#555; margin-top:2px; }
-  .meta-grid { display:grid; grid-template-columns:1fr 1fr; gap:1mm 8mm; margin-bottom:5mm; }
-  .meta-item label { font-size:7pt; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:#E8943A; display:block; }
-  .meta-item span  { font-size:9pt; }
-
-  .sec-label { font-size:8pt; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:#E8943A; border-bottom:2px solid #E8943A; display:inline-block; padding-bottom:1px; margin-bottom:3mm; }
+  body { font-family:'Source Sans 3',Arial,sans-serif; font-size:8.5pt; color:#1C1E20; }
+  .pagina { page-break-after:always; }
+  .pagina:last-child { page-break-after:avoid; }
+  .bar { height:4px; background:linear-gradient(to right,#E8943A 50%,#4DA99A 50%); margin-bottom:3.5mm; }
+  .header { display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:3mm; padding-bottom:2mm; border-bottom:2px solid #1C1E20; }
+  .ws-naam { font-size:13pt; font-weight:700; }
+  .ws-sub  { font-size:8pt; color:#555; margin-top:1px; }
+  .meta-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:1mm 8mm; margin-bottom:3.5mm; }
+  .meta-item label { font-size:6.5pt; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; color:#E8943A; display:block; }
+  .meta-item span  { font-size:8pt; }
+  .sec-label { font-size:7pt; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:#E8943A; border-bottom:2px solid #E8943A; display:inline-block; padding-bottom:1px; margin-bottom:2.5mm; }
   .sec-label.teal { color:#4DA99A; border-color:#4DA99A; }
-
-  table { width:100%; border-collapse:collapse; margin-bottom:6mm; font-size:9.5pt; border:1px solid #ccc; }
-  th { background:#1C1E20; color:white; padding:5px 7px; text-align:left; font-size:8pt; letter-spacing:0.5px; font-weight:600; border-right:1px solid rgba(255,255,255,0.15); }
-  th:last-child { border-right:none; }
+  table { width:100%; border-collapse:collapse; margin-bottom:3mm; font-size:8pt; border:2px solid #888; }
+  th { background:#1C1E20; color:#fff; padding:5px 6px; text-align:left; font-size:7pt; font-weight:600; border-right:2px solid rgba(255,255,255,.2); }
   th.c { text-align:center; }
-  td { padding:6px 7px; border-bottom:1px solid #ddd; border-right:1px solid #ddd; vertical-align:middle; }
+  th:last-child { border-right:none; }
+  td { padding:6px 6px; border-bottom:1.5px solid #bbb; border-right:1.5px solid #bbb; vertical-align:middle; }
+  td.c { text-align:center; }
   td:last-child { border-right:none; }
   tr:nth-child(even) td { background:#f7f7f7; }
-  .num { width:24px; }
-  .check-col { width:42px; }
-  .opm-col { width:65px; }
-
   .vw-table th { background:#4DA99A; }
-
-  .footer { margin-top:6mm; padding-top:3mm; border-top:1px solid #ddd; display:flex; justify-content:space-between; font-size:8pt; color:#888; }
-</style>
-</head><body>
-<div class="bar"></div>
-
-<div class="header">
-  <div>
-    <div class="ws-naam">${ws.org}${ws.wijk?' — '+ws.wijk:''}</div>
-    <div class="ws-sub">Samen Digitaal Sterk · Presentielijst</div>
-  </div>
-  <div style="text-align:right;font-size:9pt;color:#555;">
-    Afgedrukt: ${new Date().toLocaleDateString('nl-NL',{day:'numeric',month:'long',year:'numeric'})}
-  </div>
-</div>
-
-<div class="meta-grid">
-  <div class="meta-item"><label>Dagdeel 1</label><span>${fmtDate(ws.dag1)||'—'}</span></div>
-  <div class="meta-item"><label>Dagdeel 2</label><span>${fmtDate(ws.dag2)||'—'}</span></div>
-  <div class="meta-item"><label>Tijd</label><span>${ws.tijd||'—'}</span></div>
-  <div class="meta-item"><label>Adres</label><span>${ws.adres||'—'}</span></div>
-  ${ws.contact?`<div class="meta-item"><label>Contactpersoon</label><span>${ws.contact}</span></div>`:''}
-  ${ws.bijz?`<div class="meta-item"><label>Bijzonderheden</label><span>${ws.bijz}</span></div>`:''}
-</div>
-
-<div class="sec-label">Deelnemers (${deeln.length})</div>
-<table>
-  <thead>
-    <tr>
-      <th class="num">#</th>
-      <th>Naam</th>
-      <th style="width:60px;">Apparaat</th>
-      <th class="c check-col">D1</th>
-      <th class="c check-col">D2</th>
-      <th class="opm-col">Opmerking</th>
-    </tr>
-  </thead>
-  <tbody>${rijen}</tbody>
-</table>
-
-<div class="sec-label teal">Vrijwilligers</div>
-<table class="vw-table">
-  <thead>
-    <tr>
-      <th>Naam</th>
-      <th>Organisatie</th>
-      <th class="c" style="width:40px;">D1</th>
-      <th class="c" style="width:40px;">D2</th>
-    </tr>
-  </thead>
-  <tbody>${vrijwRijen}</tbody>
-</table>
-
-<div class="footer">
-  <span>Samen Digitaal Sterk · Gemeente Rotterdam 2026</span>
-  <span>Rob Bezemer Photography · Stichting Mens Centraal</span>
-</div>
+  .num  { width:18px; }
+  .naam { width:110px; }
+  .adres{ width:130px; }
+  .pc   { width:58px; }
+  .wp   { width:80px; }
+  .smal { width:24px; }
+  .app  { width:55px; }
+  .vink { width:34px; }
+  .toestemming { font-size:7pt; color:#555; border:1px solid #ddd; border-radius:3px; padding:4px 7px; margin-top:3mm; }
+  .footer { margin-top:3mm; padding-top:2mm; border-top:1px solid #ddd; display:flex; justify-content:space-between; font-size:7pt; color:#888; }
+</style></head><body>
+${paginaHtml(slots.slice(0,10), 1, false)}
+${paginaHtml(slots.slice(10,20), 2, true)}
 </body></html>`;
 
   const pw = window.open('','_blank');
