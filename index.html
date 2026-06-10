@@ -206,7 +206,7 @@ input[readonly]{background:#f9f9f9;color:#888;}
   <div class="topbar-logo">📋</div>
   <div>
     <div style="font-size:15px;font-weight:600;">Samen Digitaal Sterk</div>
-    <div style="font-size:11px;color:#aaa;">Beheer · v8 · Rotterdam 2026</div>
+    <div style="font-size:11px;color:#aaa;">Beheer · v8f · Rotterdam 2026</div>
   </div>
   <div style="margin-left:auto;display:flex;align-items:center;gap:12px;">
     <span id="rol-badge" style="display:none;font-size:11px;color:#aaa;"></span>
@@ -1970,6 +1970,14 @@ function doPrint() {
   const vw = db.vrijwilligers.filter(v => v.wsId === wsId);
   const TOTAAL = 20;
 
+  // Logo src's ophalen uit deelname-formulier template
+  const rbSrcMatch  = DEELNAME_PAGE.match(/class="logo-rb"\s+src="([^"]+)"/);
+  const rotSrcMatch = DEELNAME_PAGE.match(/class="logo-rot"\s+src="([^"]+)"/);
+  const mcSrcMatch  = DEELNAME_PAGE.match(/class="logo-mc"\s+src="([^"]+)"/);
+  const rbSrc  = rbSrcMatch  ? rbSrcMatch[1]  : '';
+  const rotSrc = rotSrcMatch ? rotSrcMatch[1] : '';
+  const mcSrc  = mcSrcMatch  ? mcSrcMatch[1]  : '';
+
   // Bouw array van 20 slots
   const slots = Array.from({length: TOTAAL}, (_, i) => deeln[i] || null);
 
@@ -2002,13 +2010,15 @@ function doPrint() {
     return `<div class="pagina">
       <div class="bar"></div>
       <div class="header">
-        <div>
+        ${rbSrc ? `<img class="logo-rb" src="${rbSrc}">` : ''}
+        <div style="flex:1;padding:0 4mm;text-align:center;">
           <div class="ws-naam">${ws.org}${ws.wijk?' — '+ws.wijk:''}</div>
-          <div class="ws-sub">Samen Digitaal Sterk · Presentielijst · Pagina ${pNr} van 2</div>
+          <div class="ws-sub">Samen Digitaal Sterk · Presentielijst · Pagina ${pNr} van 2 &nbsp;|&nbsp; ${fmtDate(ws.dag1)||'—'} &amp; ${fmtDate(ws.dag2)||'—'}${ws.tijd?' · '+ws.tijd:''}</div>
+          <div class="ws-sub">Afgedrukt: ${new Date().toLocaleDateString('nl-NL',{day:'numeric',month:'long',year:'numeric'})}</div>
         </div>
-        <div style="text-align:right;font-size:8pt;color:#555;">
-          ${fmtDate(ws.dag1)||'—'} &amp; ${fmtDate(ws.dag2)||'—'} · ${ws.tijd||''}<br>
-          Afgedrukt: ${new Date().toLocaleDateString('nl-NL',{day:'numeric',month:'long',year:'numeric'})}
+        <div style="display:flex;gap:3mm;align-items:center;">
+          ${rotSrc ? `<img class="logo-rot" src="${rotSrc}">` : ''}
+          ${mcSrc ? `<img class="logo-mc" src="${mcSrc}">` : ''}
         </div>
       </div>
       ${pNr===1?`<div class="meta-grid">
@@ -2043,13 +2053,16 @@ function doPrint() {
   const html = `<!DOCTYPE html><html lang="nl"><head><meta charset="UTF-8">
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;600;700&display=swap');
-  @page { size: A4 landscape; margin: 12mm 18mm 10mm 18mm; }
+  @page { size: A4 landscape; margin: 10mm 10mm 8mm 10mm; }
   * { margin:0; padding:0; box-sizing:border-box; }
   body { font-family:'Source Sans 3',Arial,sans-serif; font-size:8.5pt; color:#1C1E20; }
   .pagina { page-break-after:always; }
   .pagina:last-child { page-break-after:avoid; }
   .bar { height:4px; background:linear-gradient(to right,#E8943A 50%,#4DA99A 50%); margin-bottom:3.5mm; }
-  .header { display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:3mm; padding-bottom:2mm; border-bottom:2px solid #1C1E20; }
+  .header { display:flex; justify-content:space-between; align-items:center; margin-bottom:3mm; padding-bottom:2mm; border-bottom:2px solid #1C1E20; }
+  .logo-rb  { height:12mm; width:12mm; object-fit:contain; flex-shrink:0; }
+  .logo-rot { height:8mm;  width:38mm; object-fit:contain; }
+  .logo-mc  { height:10mm; width:32mm; object-fit:contain; }
   .ws-naam { font-size:13pt; font-weight:700; }
   .ws-sub  { font-size:8pt; color:#555; margin-top:1px; }
   .meta-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:1mm 8mm; margin-bottom:3.5mm; }
