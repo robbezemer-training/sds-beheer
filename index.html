@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Samen Digitaal Sterk — Beheer v8m</title>
+<title>Samen Digitaal Sterk — Beheer v8n</title>
 <style>
 @font-face {
   font-family: 'Bebas Neue';
@@ -151,7 +151,7 @@ input[readonly]{background:#f9f9f9;color:#888;}
   <div class="topbar-logo">📋</div>
   <div>
     <div style="font-size:15px;font-weight:600;">Samen Digitaal Sterk</div>
-    <div style="font-size:11px;color:#aaa;">Beheer · v8m · Rotterdam 2026</div>
+    <div style="font-size:11px;color:#aaa;">Beheer · v8n · Rotterdam 2026</div>
   </div>
   <div style="margin-left:auto;display:flex;align-items:center;gap:12px;">
     <span id="rol-badge" style="display:none;font-size:11px;color:#aaa;"></span>
@@ -344,7 +344,8 @@ input[readonly]{background:#f9f9f9;color:#888;}
 </div>
 <script>
 // ── DATA ──
-let db = { organisaties:[], workshops:[], deelnemers:[], vrijwilligers:[] };
+let db = { organisaties:[], workshops:[], deelnemers:[], vrijwilligers:[], evaluaties:[] };
+function ensureSchema(){ if(!db.evaluaties) db.evaluaties=[]; }
 let cntContacts = 1;
 
 // ── ROLLEN ──
@@ -425,6 +426,7 @@ function checkPin() {
 // ── STORAGE ──
 function load() {
   try{ const r=localStorage.getItem('sds_v6'); if(r) db=JSON.parse(r); } catch(e){}
+  ensureSchema();
   render();
 }
 function save() {
@@ -446,7 +448,7 @@ async function syncVanAuto() {
   const url=getSheetUrl(); if(!url) return;
   try{
     const resp=await fetch(url+'?action=get'); const result=await resp.json();
-    if(result.ok&&result.data){ db=result.data; save(); render(); setSyncBadge('ok','✓ Data opgehaald'); }
+    if(result.ok&&result.data){ db=result.data; ensureSchema(); save(); render(); setSyncBadge('ok','✓ Data opgehaald'); }
   }catch(e){}
 }
 async function syncNaar() {
@@ -466,7 +468,7 @@ async function syncVan() {
     const resp=await fetch(url+'?action=get'); const result=await resp.json();
     if(result.ok&&result.data){
       if(!confirm('Huidige data vervangen?')){ document.getElementById('sync-badge').style.display='none'; setSyncLog(''); return; }
-      db=result.data; save(); render(); setSyncBadge('ok','✓ Opgehaald'); setSyncLog('✓ '+new Date().toLocaleTimeString('nl-NL',{hour:'2-digit',minute:'2-digit'}));
+      db=result.data; ensureSchema(); save(); render(); setSyncBadge('ok','✓ Opgehaald'); setSyncLog('✓ '+new Date().toLocaleTimeString('nl-NL',{hour:'2-digit',minute:'2-digit'}));
     } else{ setSyncBadge('err','✗ Geen data'); setSyncLog('Verstuur eerst vanuit dit systeem.'); }
   }catch(e){ setSyncBadge('err','✗ Mislukt'); setSyncLog('Controleer de URL.'); }
 }
@@ -551,6 +553,7 @@ function slaModalOp() {
   else if (modalType === 'workshop') slaWorkshopOp();
   else if (modalType === 'deelnemer') slaDeelnemerOp();
   else if (modalType === 'vrijwilliger') slaVrijwilligerOp();
+  else if (modalType === 'evaluatie') slaEvaluatieOp();
 }
 
 function openModal(title) {
@@ -652,6 +655,78 @@ function slaWorkshopOp() {
   w.contact = document.getElementById('e-contact').value.trim();
   w.bijz = document.getElementById('e-bijz').value.trim();
   save(); sluitModal(); renderWorkshops(); renderOrgs();
+}
+
+// ── EVALUATIE INVOEREN (per workshop, anoniem) ──
+function evalSelOpts(arr,val){ return arr.map(x=>`<option value="${x}" ${x===val?'selected':''}>${x||'—'}</option>`).join(''); }
+function evalWorkshop(wsId){
+  const w=db.workshops.find(x=>x.id===wsId); if(!w) return;
+  modalType='evaluatie'; modalId=wsId;
+  const ev=(db.evaluaties||[]).find(e=>e.wsId===wsId)||{};
+  const d=ev.deelnemer||{}, o=ev.organisatie||{};
+  const cij=d.cijfers||{}, meer=d.meer||{}, aanb=d.aanbevelen||{};
+  const ni=(id,val)=>`<input type="number" min="0" id="${id}" value="${val!=null?val:''}" placeholder="0" style="width:100%;">`;
+  document.getElementById('modal-body').innerHTML=`
+    <div style="font-size:11px;color:#888;margin-bottom:10px;">${w.org}${w.wijk?' — '+w.wijk:''} · ${fmtDate(w.dag1)}</div>
+    <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:#E8943A;letter-spacing:1px;margin:4px 0 6px;">Deelnemers — tellingen (anoniem)</div>
+    <div class="form-row"><div><label>Aantal ingevulde formulieren</label>${ni('ev-aantal',d.aantal)}</div></div>
+    <label style="font-size:11px;font-weight:600;display:block;margin-top:6px;">1 &middot; Wat vond u van de workshop? (aantal per cijfer 1–10)</label>
+    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:5px;margin:4px 0 8px;">
+      ${[1,2,3,4,5,6,7,8,9,10].map(n=>`<div><label style="font-size:10px;">${n}</label>${ni('ev-c'+n,cij[n])}</div>`).join('')}
+    </div>
+    <div class="form-row full"><div><label>2 &middot; Wat heeft u het meest geleerd? (opvallende antwoorden)</label><textarea id="ev-geleerd" style="min-height:50px;">${d.meestGeleerd||''}</textarea></div></div>
+    <label style="font-size:11px;font-weight:600;display:block;margin-top:6px;">3 &middot; Wilt u meer workshops?</label>
+    <div class="form-row three">
+      <div><label>Ja</label>${ni('ev-meer-ja',meer.ja)}</div>
+      <div><label>Nee</label>${ni('ev-meer-nee',meer.nee)}</div>
+      <div><label>Weet ik niet</label>${ni('ev-meer-weet',meer.weet)}</div>
+    </div>
+    <div class="form-row full"><div><label>Genoemde onderwerpen</label><textarea id="ev-onderwerpen" style="min-height:40px;">${d.onderwerpen||''}</textarea></div></div>
+    <label style="font-size:11px;font-weight:600;display:block;margin-top:6px;">4 &middot; Zou u aanbevelen?</label>
+    <div class="form-row four">
+      <div><label>Nee</label>${ni('ev-aanb-nee',aanb.nee)}</div>
+      <div><label>Misschien</label>${ni('ev-aanb-misschien',aanb.misschien)}</div>
+      <div><label>Ja</label>${ni('ev-aanb-ja',aanb.ja)}</div>
+      <div><label>Zeker!</label>${ni('ev-aanb-zeker',aanb.zeker)}</div>
+    </div>
+    <div class="form-row full"><div><label>5 &middot; Overige opmerkingen / suggesties</label><textarea id="ev-opm" style="min-height:50px;">${d.opmerkingen||''}</textarea></div></div>
+    <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:#4DA99A;letter-spacing:1px;margin:14px 0 6px;">Organisatie</div>
+    <div class="form-row"><div><label>Contactpersoon</label><input id="ev-org-contact" value="${o.contactpersoon||w.contact||''}"></div>
+      <div><label>Datum</label><input type="date" id="ev-org-datum" value="${o.datum||''}"></div></div>
+    <div class="form-row"><div><label>1 &middot; Samenwerking</label><select id="ev-org-sam">${evalSelOpts(['','Slecht','Matig','Goed','Zeer goed'],o.samenwerking)}</select></div>
+      <div><label>2 &middot; Aansluiting doelgroep</label><select id="ev-org-aan">${evalSelOpts(['','Goed','Redelijk','Matig','Niet'],o.aansluiting)}</select></div></div>
+    <div class="form-row full"><div><label>3 &middot; Volgend jaar opnieuw?</label><select id="ev-org-opnieuw">${evalSelOpts(['','Ja','Nee','Misschien'],o.opnieuw)}</select></div></div>
+    <div class="form-row full"><div><label>4 &middot; Wat kan er beter?</label><textarea id="ev-org-beter" style="min-height:40px;">${o.beter||''}</textarea></div></div>
+    <div class="form-row full"><div><label>5 &middot; Overige opmerkingen</label><textarea id="ev-org-opm" style="min-height:40px;">${o.opmerkingen||''}</textarea></div></div>`;
+  openModal('Evaluatie invoeren');
+}
+function slaEvaluatieOp(){
+  const wsId=modalId;
+  const num=id=>{ const v=parseInt(document.getElementById(id)?.value); return isNaN(v)?0:v; };
+  const val=id=>(document.getElementById(id)?.value||'').trim();
+  const cijfers={}; [1,2,3,4,5,6,7,8,9,10].forEach(n=>cijfers[n]=num('ev-c'+n));
+  const rec={
+    wsId, ingevoerdOp:new Date().toISOString(),
+    deelnemer:{
+      aantal:num('ev-aantal'), cijfers,
+      meestGeleerd:val('ev-geleerd'),
+      meer:{ja:num('ev-meer-ja'),nee:num('ev-meer-nee'),weet:num('ev-meer-weet')},
+      onderwerpen:val('ev-onderwerpen'),
+      aanbevelen:{nee:num('ev-aanb-nee'),misschien:num('ev-aanb-misschien'),ja:num('ev-aanb-ja'),zeker:num('ev-aanb-zeker')},
+      opmerkingen:val('ev-opm')
+    },
+    organisatie:{
+      contactpersoon:val('ev-org-contact'), datum:val('ev-org-datum'),
+      samenwerking:val('ev-org-sam'), aansluiting:val('ev-org-aan'), opnieuw:val('ev-org-opnieuw'),
+      beter:val('ev-org-beter'), opmerkingen:val('ev-org-opm')
+    }
+  };
+  ensureSchema();
+  const i=db.evaluaties.findIndex(e=>e.wsId===wsId);
+  if(i>=0) db.evaluaties[i]=rec; else db.evaluaties.push(rec);
+  save(); sluitModal(); renderWorkshops();
+  const evTab=document.getElementById('tab-evaluatie');
+  if(evTab&&evTab.classList.contains('active')) renderEvaluatie();
 }
 
 // ── EDIT DEELNEMER ──
@@ -926,6 +1001,7 @@ function renderWorkshops(preOrgId) {
     const d=db.deelnemers.filter(x=>x.wsId===w.id);
     const n=d.length, a1=d.filter(x=>x.les1==='ja').length, a2=d.filter(x=>x.les2==='ja').length;
     const vw=db.vrijwilligers.filter(x=>x.wsId===w.id);
+    const ev=(db.evaluaties||[]).find(e=>e.wsId===w.id);
     const cal=calUrl(w);
     const deelnRijen = d.length ? d.map(dl=>`
       <div class="row-item" style="flex-wrap:wrap;gap:6px;padding:5px 0;border-bottom:1px solid #f0f0f0;">
@@ -945,7 +1021,7 @@ function renderWorkshops(preOrgId) {
     return `<div class="card">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;">
         <div style="flex:1;">
-          <div style="font-weight:600;font-size:14px;">${w.org}${w.wijk?' <span style="font-weight:400;color:#888;">— '+w.wijk+'</span>':''}</div>
+          <div style="font-weight:600;font-size:14px;">${w.org}${w.wijk?' <span style="font-weight:400;color:#888;">— '+w.wijk+'</span>':''}${ev?' <span style="font-size:10px;color:#4DA99A;font-weight:600;">✓ geëvalueerd</span>':''}</div>
           <div style="font-size:12px;color:#666;margin-top:2px;">
             📅 ${fmtDate(w.dag1)} &amp; ${fmtDate(w.dag2)}${w.tijd?' · '+w.tijd:''}
             <a href="${cal.url1}" target="_blank" style="font-size:10px;color:#4DA99A;text-decoration:none;margin-left:4px;" title="Dag 1 agenda">📆D1</a>
@@ -963,6 +1039,7 @@ function renderWorkshops(preOrgId) {
             <button class="btn btn-sm btn-t" onclick="printD2Lijst(${w.id})" style="font-size:11px;background:#4DA99A;border-color:#4DA99A;color:#fff;">🖨 D2-lijst</button>
             <button class="btn btn-sm" onclick="toggleDeelnWs(${w.id},this)" style="font-size:11px;">👥 Deelnemers</button>
             <button class="btn btn-sm btn-o" onclick="editWorkshop(${w.id})" style="font-size:11px;">✏️ Edit</button>
+            <button class="btn btn-sm" onclick="evalWorkshop(${w.id})" style="font-size:11px;background:#1C1E20;color:#fff;border-color:#1C1E20;">📝 Evaluatie</button>
             ${isB?`<button class="btn btn-del btn-sm" onclick="deleteWorkshop(${w.id})">🗑</button>`:''}
           </div>
         </div>
@@ -1263,7 +1340,7 @@ function printWorkshoprapport(){
   @page portrait { size:A4 portrait; margin:0; }
   @page landscape { size:A4 landscape; margin:0; }
   html, body { background:#e9e9e9; font-family:'Source Sans 3',Arial,sans-serif; color:#1C1E20; }
-  .page { width:190mm; min-height:268mm; background:white; display:flex; flex-direction:column; margin:0 auto 8mm; padding-top:6mm; box-shadow:0 2px 16px rgba(0,0,0,.15); page:portrait; page-break-after:always; }
+  .page { width:190mm; min-height:252mm; background:white; display:flex; flex-direction:column; margin:0 auto 8mm; padding-top:6mm; box-shadow:0 2px 16px rgba(0,0,0,.15); page:portrait; page-break-after:always; }
   .page.land { width:277mm; min-height:auto; height:194mm; page:landscape; }
   .page:last-child { page-break-after:auto; }
   .bar { height:6px; background:linear-gradient(to right,#E8943A 50%,#4DA99A 50%); flex-shrink:0; }
@@ -1353,6 +1430,15 @@ function renderEvaluatie(){
   const and=db.deelnemers.filter(d=>d.apparaat==='Android').length;
   const cert=db.deelnemers.filter(d=>d.les1==='ja'||d.les2==='ja').length;
   const vwUniek=[...new Set(db.vrijwilligers.map(v=>v.naam))];
+  const evs=db.evaluaties||[];
+  let nForm=0,cijSom=0,cijN=0,aanbPos=0,aanbN=0,meerJa=0,meerN=0;
+  evs.forEach(e=>{const dd=e.deelnemer||{};nForm+=dd.aantal||0;
+    const c=dd.cijfers||{};for(let k=1;k<=10;k++){cijSom+=k*(c[k]||0);cijN+=(c[k]||0);}
+    const a=dd.aanbevelen||{};aanbPos+=(a.ja||0)+(a.zeker||0);aanbN+=(a.nee||0)+(a.misschien||0)+(a.ja||0)+(a.zeker||0);
+    const m=dd.meer||{};meerJa+=(m.ja||0);meerN+=(m.ja||0)+(m.nee||0)+(m.weet||0);});
+  const gemCijfer=cijN?(cijSom/cijN).toFixed(1):'—';
+  const pctAanb=aanbN?Math.round(aanbPos/aanbN*100):0;
+  const pctMeer=meerN?Math.round(meerJa/meerN*100):0;
   el.innerHTML=`
   <div class="stat-grid">
     <div class="stat"><div class="stat-n">${totWs}<span style="font-size:14px;color:#aaa;">/10</span></div><div class="stat-l">Workshops</div></div>
@@ -1365,6 +1451,15 @@ function renderEvaluatie(){
     <div class="stat"><div class="stat-n">${iph}</div><div class="stat-l">iPhone</div></div>
     <div class="stat"><div class="stat-n">${and}</div><div class="stat-l">Android</div></div>
     <div class="stat"><div class="stat-n">${totD-iph-and}</div><div class="stat-l">Overig</div></div>
+  </div>
+  <div class="card">
+    <div class="card-title">Evaluaties deelnemers ${evs.length?`· ${evs.length} workshop(s) · ${nForm} formulieren`:''}</div>
+    ${evs.length?`<div class="stat-grid">
+      <div class="stat"><div class="stat-n" style="color:#E8943A;">${gemCijfer}<span style="font-size:14px;color:#aaa;">/10</span></div><div class="stat-l">Gem. cijfer</div></div>
+      <div class="stat"><div class="stat-n" style="color:#4DA99A;">${pctAanb}%</div><div class="stat-l">Beveelt aan</div></div>
+      <div class="stat"><div class="stat-n">${pctMeer}%</div><div class="stat-l">Wil meer</div></div>
+      <div class="stat"><div class="stat-n">${nForm}</div><div class="stat-l">Reacties</div></div>
+    </div>`:'<div class="lege">Nog geen evaluaties ingevoerd. Gebruik 📝 Evaluatie op een workshopkaart.</div>'}
   </div>
   <div class="card">
     <div class="card-title">Per workshop</div>
@@ -1393,7 +1488,18 @@ function genRapport(){
   const cert=db.deelnemers.filter(d=>d.les1==='ja'||d.les2==='ja').length;
   const vwUniek=[...new Set(db.vrijwilligers.map(v=>v.naam))];
   const wijken=[...new Set(db.workshops.map(w=>w.wijk).filter(Boolean))].join(', ');
-  const txt=`EVALUATIERAPPORT — SAMEN DIGITAAL STERK 2026\nGemeente Rotterdam — Programma Digitale Inclusie\nGegenereerd: ${new Date().toLocaleDateString('nl-NL',{day:'numeric',month:'long',year:'numeric'})}\n\nSAMENVATTING\nUitgevoerde workshops: ${totWs}/10\nWijken: ${wijken||'diverse Rotterdamse wijken'}\n\nBEREIK\nTotaal deelnemers: ${totD}\nAanwezig beide dagdelen: ${beid} (${totD>0?Math.round(beid/totD*100):0}%)\nCertificaten: ${cert}\nVrijwilligers: ${vwUniek.length} (${vwUniek.join(', ')})\n\nAPPARATEN\niPhone: ${iph} · Android: ${and} · Overig: ${totD-iph-and}\n\nWORKSHOPS\n${db.workshops.map(w=>{const d=db.deelnemers.filter(x=>x.wsId===w.id);const c=d.filter(x=>x.les1==='ja'||x.les2==='ja').length;return`• ${w.org}${w.wijk?' ('+w.wijk+')':''} | ${fmtDateShort(w.dag1)} & ${fmtDateShort(w.dag2)} | ${d.length} deeln | 🎓${c}`;}).join('\n')}`;
+  const evs=db.evaluaties||[];
+  let nForm=0,cijSom=0,cijN=0,aanbPos=0,aanbN=0,meerJa=0,meerN=0;
+  evs.forEach(e=>{const dd=e.deelnemer||{};nForm+=dd.aantal||0;
+    const c=dd.cijfers||{};for(let k=1;k<=10;k++){cijSom+=k*(c[k]||0);cijN+=(c[k]||0);}
+    const a=dd.aanbevelen||{};aanbPos+=(a.ja||0)+(a.zeker||0);aanbN+=(a.nee||0)+(a.misschien||0)+(a.ja||0)+(a.zeker||0);
+    const m=dd.meer||{};meerJa+=(m.ja||0);meerN+=(m.ja||0)+(m.nee||0)+(m.weet||0);});
+  const gemCijfer=cijN?(cijSom/cijN).toFixed(1):'—';
+  const pctAanb=aanbN?Math.round(aanbPos/aanbN*100):0;
+  const pctMeer=meerN?Math.round(meerJa/meerN*100):0;
+  const quotes=evs.map(e=>(e.deelnemer&&e.deelnemer.meestGeleerd||'').trim()).filter(Boolean);
+  const evalTxt=evs.length?`\n\nEVALUATIE DEELNEMERS\nIngevulde formulieren: ${nForm}\nGemiddeld cijfer: ${gemCijfer}/10\nBeveelt workshop aan: ${pctAanb}%\nWil meer workshops: ${pctMeer}%${quotes.length?'\n\nWat deelnemers het meest leerden:\n'+quotes.map(q=>'• '+q).join('\n'):''}`:'';
+  const txt=`EVALUATIERAPPORT — SAMEN DIGITAAL STERK 2026\nGemeente Rotterdam — Programma Digitale Inclusie\nGegenereerd: ${new Date().toLocaleDateString('nl-NL',{day:'numeric',month:'long',year:'numeric'})}\n\nSAMENVATTING\nUitgevoerde workshops: ${totWs}/10\nWijken: ${wijken||'diverse Rotterdamse wijken'}\n\nBEREIK\nTotaal deelnemers: ${totD}\nAanwezig beide dagdelen: ${beid} (${totD>0?Math.round(beid/totD*100):0}%)\nCertificaten: ${cert}\nVrijwilligers: ${vwUniek.length} (${vwUniek.join(', ')})\n\nAPPARATEN\niPhone: ${iph} · Android: ${and} · Overig: ${totD-iph-and}\n\nWORKSHOPS\n${db.workshops.map(w=>{const d=db.deelnemers.filter(x=>x.wsId===w.id);const c=d.filter(x=>x.les1==='ja'||x.les2==='ja').length;return`• ${w.org}${w.wijk?' ('+w.wijk+')':''} | ${fmtDateShort(w.dag1)} & ${fmtDateShort(w.dag2)} | ${d.length} deeln | 🎓${c}`;}).join('\n')}${evalTxt}`;
   window._rapport=txt;
   document.getElementById('rapport-out').innerHTML=`<div style="background:#1C1E20;color:#ddd;border-radius:10px;padding:16px;font-family:monospace;font-size:11px;line-height:1.7;white-space:pre-wrap;">${txt}</div>
   <button class="btn btn-t" onclick="navigator.clipboard.writeText(window._rapport).then(()=>alert('Gekopieerd!'))" style="margin-top:8px;">📋 Kopiëren</button>`;
@@ -1574,7 +1680,7 @@ const DEELNAME_PAGE = `<div class="page">
     <div class="section">
       <div class="sec-label teal">Toestemming</div>
       <div style="font-size:10pt;color:#1C1E20;line-height:1.5;margin-bottom:3mm;">
-        Uw gegevens worden uitsluitend gebruikt voor de organisatie van deze workshop en de rapportage aan Gemeente Rotterdam. Ze worden niet gedeeld met derden.
+        Uw gegevens worden uitsluitend gebruikt door Gemeente Rotterdam, de betrokken welzijnsorganisaties en ons, voor de organisatie van deze workshop en de rapportage. Ze worden niet met andere partijen gedeeld.
       </div>
       <div class="field-row two">
         <div class="field"><label>Handtekening</label><div class="line" style="height:13mm;"></div></div>
@@ -1648,7 +1754,7 @@ const EVAL_DEELNEMER_PAGE = `<div class="page">
       <div class="sec-label">5 &nbsp;Overige opmerkingen of suggesties</div>
       <div class="schrijflijnen">
         <div class="schrijflijn"></div><div class="schrijflijn"></div>
-        <div class="schrijflijn"></div><div class="schrijflijn"></div>
+        <div class="schrijflijn"></div>
       </div>
     </div>
     <div style="text-align:center;font-size:10pt;color:#1C1E20;margin-top:auto;padding-top:3mm;">
