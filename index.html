@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Samen Digitaal Sterk — Beheer v8n</title>
+<title>Samen Digitaal Sterk — Beheer v8p</title>
 <style>
 @font-face {
   font-family: 'Bebas Neue';
@@ -151,7 +151,7 @@ input[readonly]{background:#f9f9f9;color:#888;}
   <div class="topbar-logo">📋</div>
   <div>
     <div style="font-size:15px;font-weight:600;">Samen Digitaal Sterk</div>
-    <div style="font-size:11px;color:#aaa;">Beheer · v8n · Rotterdam 2026</div>
+    <div style="font-size:11px;color:#aaa;">Beheer · v8p · Rotterdam 2026</div>
   </div>
   <div style="margin-left:auto;display:flex;align-items:center;gap:12px;">
     <span id="rol-badge" style="display:none;font-size:11px;color:#aaa;"></span>
@@ -657,76 +657,230 @@ function slaWorkshopOp() {
   save(); sluitModal(); renderWorkshops(); renderOrgs();
 }
 
-// ── EVALUATIE INVOEREN (per workshop, anoniem) ──
+// ── EVALUATIE (per formulier; systeem rekent) ──
 function evalSelOpts(arr,val){ return arr.map(x=>`<option value="${x}" ${x===val?'selected':''}>${x||'—'}</option>`).join(''); }
+
+function evalAggr(wsId){
+  ensureSchema();
+  const recs=db.evaluaties.filter(e=>e.wsId===wsId&&e.type==='d');
+  const cijfers=recs.map(r=>r.cijfer).filter(c=>typeof c==='number'&&c>=1&&c<=10);
+  const gem=cijfers.length?(cijfers.reduce((a,b)=>a+b,0)/cijfers.length):null;
+  const dist={}; for(let k=1;k<=10;k++)dist[k]=0; cijfers.forEach(c=>dist[c]++);
+  const meer={'Ja':0,'Nee':0,'Weet ik niet':0}; recs.forEach(r=>{if(meer[r.meer]!=null)meer[r.meer]++;});
+  const aanb={'Nee':0,'Misschien':0,'Ja':0,'Zeker!':0}; recs.forEach(r=>{if(aanb[r.aanbevelen]!=null)aanb[r.aanbevelen]++;});
+  const aanbTot=aanb['Nee']+aanb['Misschien']+aanb['Ja']+aanb['Zeker!'];
+  const aanbPos=aanb['Ja']+aanb['Zeker!'];
+  const meerTot=meer['Ja']+meer['Nee']+meer['Weet ik niet'];
+  const geleerd=recs.map(r=>(r.geleerd||'').trim()).filter(Boolean);
+  const onderwerpen=recs.map(r=>(r.onderwerp||'').trim()).filter(Boolean);
+  const opmerkingen=recs.map(r=>(r.opmerkingen||'').trim()).filter(Boolean);
+  const org=db.evaluaties.find(e=>e.wsId===wsId&&e.type==='o')||null;
+  return {n:recs.length,recs,cijfers,gem,dist,meer,meerTot,aanb,aanbTot,aanbPos,geleerd,onderwerpen,opmerkingen,org};
+}
+
+function evalBullets(wsId){
+  const recs=(db.evaluaties||[]).filter(e=>e.wsId===wsId&&e.type==='d');
+  if(!recs.length) return '<div style="font-size:12px;color:#aaa;padding:4px 0;">Nog geen formulieren.</div>';
+  return `<ul style="list-style:none;margin:0;padding:0;max-height:200px;overflow:auto;">`+recs.map(r=>`
+    <li style="display:flex;align-items:center;gap:7px;padding:3px 0;border-bottom:1px solid #f3f3f3;font-size:12px;">
+      <span style="display:inline-flex;width:22px;height:22px;flex-shrink:0;align-items:center;justify-content:center;border-radius:50%;background:#E8943A;color:#fff;font-size:11px;font-weight:700;">${r.cijfer||'–'}</span>
+      <span style="flex:1;color:#1C1E20;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.aanbevelen||''}${r.geleerd?` <span style="color:#888;">· ${r.geleerd}</span>`:''}</span>
+      <button class="btn btn-del btn-sm" onclick="evalDelDeelnemer(${r.id},${wsId})" style="font-size:10px;padding:1px 6px;flex-shrink:0;">🗑</button>
+    </li>`).join('')+`</ul>`;
+}
+
 function evalWorkshop(wsId){
   const w=db.workshops.find(x=>x.id===wsId); if(!w) return;
-  modalType='evaluatie'; modalId=wsId;
-  const ev=(db.evaluaties||[]).find(e=>e.wsId===wsId)||{};
-  const d=ev.deelnemer||{}, o=ev.organisatie||{};
-  const cij=d.cijfers||{}, meer=d.meer||{}, aanb=d.aanbevelen||{};
-  const ni=(id,val)=>`<input type="number" min="0" id="${id}" value="${val!=null?val:''}" placeholder="0" style="width:100%;">`;
+  modalType='evaluatie'; modalId=wsId; ensureSchema();
+  const recs=db.evaluaties.filter(e=>e.wsId===wsId&&e.type==='d');
+  const o=db.evaluaties.find(e=>e.wsId===wsId&&e.type==='o')||{};
+  const radio=(name,opts)=>opts.map(opt=>`<label style="font-weight:400;display:inline-flex;align-items:center;gap:3px;margin:0 10px 4px 0;font-size:12px;"><input type="radio" name="${name}" value="${opt}" style="width:auto;"> ${opt}</label>`).join('');
   document.getElementById('modal-body').innerHTML=`
     <div style="font-size:11px;color:#888;margin-bottom:10px;">${w.org}${w.wijk?' — '+w.wijk:''} · ${fmtDate(w.dag1)}</div>
-    <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:#E8943A;letter-spacing:1px;margin:4px 0 6px;">Deelnemers — tellingen (anoniem)</div>
-    <div class="form-row"><div><label>Aantal ingevulde formulieren</label>${ni('ev-aantal',d.aantal)}</div></div>
-    <label style="font-size:11px;font-weight:600;display:block;margin-top:6px;">1 &middot; Wat vond u van de workshop? (aantal per cijfer 1–10)</label>
-    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:5px;margin:4px 0 8px;">
-      ${[1,2,3,4,5,6,7,8,9,10].map(n=>`<div><label style="font-size:10px;">${n}</label>${ni('ev-c'+n,cij[n])}</div>`).join('')}
+    <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:#E8943A;letter-spacing:1px;">Ingevoerde deelnemer-formulieren (<span id="evd-count">${recs.length}</span>)</div>
+    <div id="evd-lijst" style="margin:6px 0 10px;">${evalBullets(wsId)}</div>
+    <div style="background:#f9f9f9;border-radius:6px;padding:10px;">
+      <div style="font-size:10px;font-weight:700;color:#E8943A;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">+ Eén formulier invoeren</div>
+      <label style="font-size:12px;font-weight:600;display:block;">1 · Cijfer (1–10)</label>
+      <select id="evd-cijfer" style="margin:3px 0 8px;width:auto;"><option value="">— Kies —</option>${[1,2,3,4,5,6,7,8,9,10].map(n=>`<option value="${n}">${n}</option>`).join('')}</select>
+      <label style="font-size:12px;font-weight:600;display:block;">2 · Wat heeft u het meest geleerd?</label>
+      <textarea id="evd-geleerd" style="min-height:42px;margin:3px 0 8px;"></textarea>
+      <label style="font-size:12px;font-weight:600;display:block;">3 · Wilt u meer workshops?</label>
+      <div style="margin:3px 0 4px;">${radio('evd-meer',['Ja','Nee','Weet ik niet'])}</div>
+      <input id="evd-onderwerp" placeholder="Zo ja — welk onderwerp?" style="margin-bottom:8px;">
+      <label style="font-size:12px;font-weight:600;display:block;">4 · Zou u aanbevelen?</label>
+      <div style="margin:3px 0 4px;">${radio('evd-aanb',['Nee','Misschien','Ja','Zeker!'])}</div>
+      <label style="font-size:12px;font-weight:600;display:block;">5 · Overige opmerkingen</label>
+      <textarea id="evd-opm" style="min-height:42px;margin:3px 0 8px;"></textarea>
+      <button class="btn btn-o btn-sm" onclick="evalAddDeelnemer(${wsId})">+ Formulier toevoegen</button>
     </div>
-    <div class="form-row full"><div><label>2 &middot; Wat heeft u het meest geleerd? (opvallende antwoorden)</label><textarea id="ev-geleerd" style="min-height:50px;">${d.meestGeleerd||''}</textarea></div></div>
-    <label style="font-size:11px;font-weight:600;display:block;margin-top:6px;">3 &middot; Wilt u meer workshops?</label>
-    <div class="form-row three">
-      <div><label>Ja</label>${ni('ev-meer-ja',meer.ja)}</div>
-      <div><label>Nee</label>${ni('ev-meer-nee',meer.nee)}</div>
-      <div><label>Weet ik niet</label>${ni('ev-meer-weet',meer.weet)}</div>
-    </div>
-    <div class="form-row full"><div><label>Genoemde onderwerpen</label><textarea id="ev-onderwerpen" style="min-height:40px;">${d.onderwerpen||''}</textarea></div></div>
-    <label style="font-size:11px;font-weight:600;display:block;margin-top:6px;">4 &middot; Zou u aanbevelen?</label>
-    <div class="form-row four">
-      <div><label>Nee</label>${ni('ev-aanb-nee',aanb.nee)}</div>
-      <div><label>Misschien</label>${ni('ev-aanb-misschien',aanb.misschien)}</div>
-      <div><label>Ja</label>${ni('ev-aanb-ja',aanb.ja)}</div>
-      <div><label>Zeker!</label>${ni('ev-aanb-zeker',aanb.zeker)}</div>
-    </div>
-    <div class="form-row full"><div><label>5 &middot; Overige opmerkingen / suggesties</label><textarea id="ev-opm" style="min-height:50px;">${d.opmerkingen||''}</textarea></div></div>
-    <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:#4DA99A;letter-spacing:1px;margin:14px 0 6px;">Organisatie</div>
+    <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:#4DA99A;letter-spacing:1px;margin:16px 0 6px;">Organisatie-evaluatie</div>
     <div class="form-row"><div><label>Contactpersoon</label><input id="ev-org-contact" value="${o.contactpersoon||w.contact||''}"></div>
       <div><label>Datum</label><input type="date" id="ev-org-datum" value="${o.datum||''}"></div></div>
-    <div class="form-row"><div><label>1 &middot; Samenwerking</label><select id="ev-org-sam">${evalSelOpts(['','Slecht','Matig','Goed','Zeer goed'],o.samenwerking)}</select></div>
-      <div><label>2 &middot; Aansluiting doelgroep</label><select id="ev-org-aan">${evalSelOpts(['','Goed','Redelijk','Matig','Niet'],o.aansluiting)}</select></div></div>
-    <div class="form-row full"><div><label>3 &middot; Volgend jaar opnieuw?</label><select id="ev-org-opnieuw">${evalSelOpts(['','Ja','Nee','Misschien'],o.opnieuw)}</select></div></div>
-    <div class="form-row full"><div><label>4 &middot; Wat kan er beter?</label><textarea id="ev-org-beter" style="min-height:40px;">${o.beter||''}</textarea></div></div>
-    <div class="form-row full"><div><label>5 &middot; Overige opmerkingen</label><textarea id="ev-org-opm" style="min-height:40px;">${o.opmerkingen||''}</textarea></div></div>`;
+    <div class="form-row"><div><label>1 · Samenwerking</label><select id="ev-org-sam">${evalSelOpts(['','Slecht','Matig','Goed','Zeer goed'],o.samenwerking)}</select></div>
+      <div><label>2 · Aansluiting doelgroep</label><select id="ev-org-aan">${evalSelOpts(['','Goed','Redelijk','Matig','Niet'],o.aansluiting)}</select></div></div>
+    <div class="form-row full"><div><label>3 · Volgend jaar opnieuw?</label><select id="ev-org-opnieuw">${evalSelOpts(['','Ja','Nee','Misschien'],o.opnieuw)}</select></div></div>
+    <div class="form-row full"><div><label>4 · Wat kan er beter?</label><textarea id="ev-org-beter" style="min-height:40px;">${o.beter||''}</textarea></div></div>
+    <div class="form-row full"><div><label>5 · Overige opmerkingen</label><textarea id="ev-org-opm" style="min-height:40px;">${o.opmerkingen||''}</textarea></div></div>
+    <div style="font-size:10px;color:#aaa;margin-top:6px;">Deelnemer-formulieren sla je per stuk op (+ Formulier toevoegen). De organisatie-evaluatie sla je op met "Opslaan" onderaan.</div>`;
   openModal('Evaluatie invoeren');
 }
-function slaEvaluatieOp(){
-  const wsId=modalId;
-  const num=id=>{ const v=parseInt(document.getElementById(id)?.value); return isNaN(v)?0:v; };
-  const val=id=>(document.getElementById(id)?.value||'').trim();
-  const cijfers={}; [1,2,3,4,5,6,7,8,9,10].forEach(n=>cijfers[n]=num('ev-c'+n));
-  const rec={
-    wsId, ingevoerdOp:new Date().toISOString(),
-    deelnemer:{
-      aantal:num('ev-aantal'), cijfers,
-      meestGeleerd:val('ev-geleerd'),
-      meer:{ja:num('ev-meer-ja'),nee:num('ev-meer-nee'),weet:num('ev-meer-weet')},
-      onderwerpen:val('ev-onderwerpen'),
-      aanbevelen:{nee:num('ev-aanb-nee'),misschien:num('ev-aanb-misschien'),ja:num('ev-aanb-ja'),zeker:num('ev-aanb-zeker')},
-      opmerkingen:val('ev-opm')
-    },
-    organisatie:{
-      contactpersoon:val('ev-org-contact'), datum:val('ev-org-datum'),
-      samenwerking:val('ev-org-sam'), aansluiting:val('ev-org-aan'), opnieuw:val('ev-org-opnieuw'),
-      beter:val('ev-org-beter'), opmerkingen:val('ev-org-opm')
-    }
-  };
+
+function evalAddDeelnemer(wsId){
+  const cijfer=parseInt(document.getElementById('evd-cijfer').value);
+  const rb=n=>{const el=document.querySelector('input[name="'+n+'"]:checked');return el?el.value:'';};
+  const geleerd=(document.getElementById('evd-geleerd').value||'').trim();
+  const aanb=rb('evd-aanb');
+  if(isNaN(cijfer)&&!aanb&&!geleerd){ alert('Vul minstens een cijfer of antwoord in.'); return; }
   ensureSchema();
-  const i=db.evaluaties.findIndex(e=>e.wsId===wsId);
-  if(i>=0) db.evaluaties[i]=rec; else db.evaluaties.push(rec);
-  save(); sluitModal(); renderWorkshops();
-  const evTab=document.getElementById('tab-evaluatie');
-  if(evTab&&evTab.classList.contains('active')) renderEvaluatie();
+  db.evaluaties.push({ id:Date.now()+Math.floor(Math.random()*1000), wsId, type:'d',
+    cijfer:isNaN(cijfer)?null:cijfer, geleerd, meer:rb('evd-meer'),
+    onderwerp:(document.getElementById('evd-onderwerp').value||'').trim(),
+    aanbevelen:aanb, opmerkingen:(document.getElementById('evd-opm').value||'').trim(),
+    ts:new Date().toISOString() });
+  save();
+  document.getElementById('evd-lijst').innerHTML=evalBullets(wsId);
+  document.getElementById('evd-count').textContent=db.evaluaties.filter(e=>e.wsId===wsId&&e.type==='d').length;
+  ['evd-cijfer','evd-geleerd','evd-onderwerp','evd-opm'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  document.querySelectorAll('input[name="evd-meer"],input[name="evd-aanb"]').forEach(el=>el.checked=false);
+  const cf=document.getElementById('evd-cijfer'); if(cf) cf.focus();
+  renderWorkshops();
+}
+function evalDelDeelnemer(recId,wsId){
+  ensureSchema();
+  db.evaluaties=db.evaluaties.filter(e=>e.id!==recId);
+  save();
+  const lijst=document.getElementById('evd-lijst'); if(lijst) lijst.innerHTML=evalBullets(wsId);
+  const cnt=document.getElementById('evd-count'); if(cnt) cnt.textContent=db.evaluaties.filter(e=>e.wsId===wsId&&e.type==='d').length;
+  renderWorkshops();
+  const evTab=document.getElementById('tab-evaluatie'); if(evTab&&evTab.classList.contains('active')) renderEvaluatie();
+}
+function slaEvaluatieOp(){
+  const wsId=modalId; ensureSchema();
+  const val=id=>(document.getElementById(id)?.value||'').trim();
+  const heeftOrg=val('ev-org-contact')||val('ev-org-sam')||val('ev-org-aan')||val('ev-org-opnieuw')||val('ev-org-beter')||val('ev-org-opm')||val('ev-org-datum');
+  if(heeftOrg){
+    const rec={ wsId, type:'o', contactpersoon:val('ev-org-contact'), datum:val('ev-org-datum'),
+      samenwerking:val('ev-org-sam'), aansluiting:val('ev-org-aan'), opnieuw:val('ev-org-opnieuw'),
+      beter:val('ev-org-beter'), opmerkingen:val('ev-org-opm'), ts:new Date().toISOString() };
+    const i=db.evaluaties.findIndex(e=>e.wsId===wsId&&e.type==='o');
+    if(i>=0){ rec.id=db.evaluaties[i].id; db.evaluaties[i]=rec; } else { rec.id=Date.now(); db.evaluaties.push(rec); }
+    save();
+  }
+  sluitModal(); renderWorkshops();
+  const evTab=document.getElementById('tab-evaluatie'); if(evTab&&evTab.classList.contains('active')) renderEvaluatie();
+}
+
+// ── EVALUATIE-RAPPORTEN (huisstijl) ──
+const EVAL_RAPPORT_CSS=`
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@700&family=Source+Sans+3:wght@300;400;600;700&display=swap');
+* { margin:0; padding:0; box-sizing:border-box; }
+@page { size:A4 portrait; margin:0; }
+html,body { background:#e9e9e9; font-family:'Source Sans 3',Arial,sans-serif; color:#1C1E20; }
+.page { width:190mm; min-height:auto; background:white; display:flex; flex-direction:column; margin:0 auto 8mm; padding-top:6mm; box-shadow:0 2px 16px rgba(0,0,0,.15); page-break-after:always; }
+.page:last-child { page-break-after:auto; }
+.bar { height:6px; background:linear-gradient(to right,#E8943A 50%,#4DA99A 50%); flex-shrink:0; }
+.header { padding:4mm 6mm 3mm; display:flex; align-items:center; justify-content:space-between; position:relative; }
+.header::after { content:''; position:absolute; bottom:0; left:6mm; right:6mm; height:2px; background:linear-gradient(to right,#E8943A 50%,#4DA99A 50%); }
+.logo-rb { height:18mm; object-fit:contain; } .logo-rot { height:10mm; object-fit:contain; } .logo-mc { height:15mm; object-fit:contain; }
+.body { padding:5mm 6mm 3mm; display:flex; flex-direction:column; }
+.title-supra { font-size:8pt; letter-spacing:3px; text-transform:uppercase; margin-bottom:1px; }
+.title-main { font-family:'Poppins',sans-serif; font-size:22pt; text-transform:uppercase; line-height:1.1; }
+.title-rule { display:flex; align-items:center; margin-top:3px; margin-bottom:5mm; }
+.rule-o { height:2.5px; background:#E8943A; flex:1; } .rule-t { height:2.5px; background:#4DA99A; flex:1; }
+.rule-d { width:5px; height:5px; background:#1C1E20; transform:rotate(45deg); margin:0 5px; }
+.ws-sub { font-size:10pt; color:#777; margin-bottom:5mm; }
+.section { margin-bottom:6mm; }
+.sec-label { font-size:8pt; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:#E8943A; display:inline-block; border-bottom:2px solid #E8943A; padding-bottom:1px; margin-bottom:3mm; }
+.sec-label.teal { color:#4DA99A; border-bottom-color:#4DA99A; }
+.stat-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:4mm; }
+.stat { border:1.5px solid #e6e6e6; border-radius:3mm; padding:4mm 3mm; text-align:center; background:#fafafa; }
+.stat-o { border-top:4px solid #E8943A; } .stat-t { border-top:4px solid #4DA99A; }
+.stat-n { font-family:'Poppins',sans-serif; font-size:24pt; line-height:1; }
+.stat-l { font-size:9pt; color:#555; margin-top:2mm; }
+.brow { display:flex; align-items:center; gap:3mm; margin-bottom:2.2mm; }
+.blab { width:14mm; font-size:10pt; flex-shrink:0; } .blab.w { width:34mm; }
+.btrack { flex:1; height:5.5mm; background:#f0f0f0; border-radius:2mm; overflow:hidden; }
+.bfill { height:100%; } .bfill.o { background:#E8943A; } .bfill.t { background:#4DA99A; }
+.bval { width:8mm; text-align:right; font-size:10.5pt; font-weight:700; flex-shrink:0; }
+.qbox { background:#fafafa; border-left:3px solid #4DA99A; padding:2mm 3mm; margin-bottom:1.5mm; font-size:10pt; }
+.org-row { display:grid; grid-template-columns:1fr 1fr; gap:2mm 6mm; }
+.org-item { font-size:10pt; padding:1.5mm 0; border-bottom:1px solid #eee; }
+.org-item b { color:#4DA99A; font-size:8.5pt; text-transform:uppercase; letter-spacing:1px; display:block; }
+.footer { border-image:linear-gradient(to right,#E8943A 50%,#4DA99A 50%) 1; border-top:2px solid; padding-top:2mm; display:flex; justify-content:space-between; margin-top:5mm; margin-left:6mm; margin-right:6mm; }
+.footer-txt { font-size:7.5pt; }
+.two-col { display:grid; grid-template-columns:1fr 1fr; gap:8mm; }
+`;
+function evalHEAD(){ return `<div class="bar"></div><div class="header"><img class="logo-rb" src="${CERT_LOGO_RB}"><img class="logo-rot" src="${CERT_LOGO_ROT}"><img class="logo-mc" src="${CERT_LOGO_MC}"></div>`; }
+function evalTB(m){ return `<div class="title-supra">Samen Digitaal Sterk · Rotterdam 2026</div><div class="title-main">${m}</div><div class="title-rule"><div class="rule-o"></div><div class="rule-d"></div><div class="rule-t"></div></div>`; }
+function evalBars(distObj,labels,cls){ const max=Math.max(1,...labels.map(l=>distObj[l]||0)); return labels.map(l=>{const v=distObj[l]||0;return `<div class="brow"${v===0?' style="opacity:.4;"':''}><div class="blab w">${l}</div><div class="btrack"><div class="bfill ${cls}" style="width:${Math.round(v/max*100)}%;"></div></div><div class="bval">${v}</div></div>`;}).join(''); }
+
+function evalRapportPage(wsId){
+  const w=db.workshops.find(x=>x.id===wsId); if(!w) return '';
+  const A=evalAggr(wsId);
+  const orgTekst=w.org+(w.wijk?' — '+w.wijk:'');
+  const pctAanb=A.aanbTot?Math.round(A.aanbPos/A.aanbTot*100):0;
+  const pctMeer=A.meerTot?Math.round(A.meer['Ja']/A.meerTot*100):0;
+  const cijLabels=[10,9,8,7,6,5,4,3,2,1].map(String);
+  const cijDist={}; for(let k=1;k<=10;k++) cijDist[String(k)]=A.dist[k];
+  const quotes=A.geleerd.slice(0,6).map(q=>`<div class="qbox">${q}</div>`).join('')||'<div style="font-size:10pt;color:#aaa;">—</div>';
+  const o=A.org||{};
+  const orgBlok=A.org?`<div class="org-row">
+      <div class="org-item"><b>Contactpersoon</b>${o.contactpersoon||'—'}</div>
+      <div class="org-item"><b>Datum</b>${o.datum?fmtDate(o.datum):'—'}</div>
+      <div class="org-item"><b>Samenwerking</b>${o.samenwerking||'—'}</div>
+      <div class="org-item"><b>Aansluiting doelgroep</b>${o.aansluiting||'—'}</div>
+      <div class="org-item"><b>Volgend jaar opnieuw</b>${o.opnieuw||'—'}</div>
+      <div class="org-item"><b>Wat kan beter</b>${o.beter||'—'}</div>
+    </div>${o.opmerkingen?`<div class="qbox" style="margin-top:2mm;">${o.opmerkingen}</div>`:''}`
+    :'<div style="font-size:10pt;color:#aaa;">Nog geen organisatie-evaluatie ingevoerd.</div>';
+  return `<div class="page">${evalHEAD()}<div class="body">${evalTB('Evaluatierapport')}
+    <div class="ws-sub">${orgTekst} · ${fmtDate(w.dag1)} &amp; ${fmtDate(w.dag2)}</div>
+    <div class="section"><div class="sec-label">Deelnemers</div>
+      <div class="stat-grid">
+        <div class="stat stat-o"><div class="stat-n">${A.n}</div><div class="stat-l">Formulieren</div></div>
+        <div class="stat stat-o"><div class="stat-n">${A.gem!=null?A.gem.toFixed(1):'—'}</div><div class="stat-l">Gem. cijfer /10</div></div>
+        <div class="stat stat-t"><div class="stat-n">${pctAanb}%</div><div class="stat-l">Beveelt aan</div></div>
+        <div class="stat stat-t"><div class="stat-n">${pctMeer}%</div><div class="stat-l">Wil meer</div></div>
+      </div></div>
+    <div class="section"><div class="two-col">
+      <div><div class="sec-label">Cijferverdeling</div>${evalBars(cijDist,cijLabels,'o')}</div>
+      <div><div class="sec-label teal">Aanbeveling</div>${evalBars(A.aanb,['Zeker!','Ja','Misschien','Nee'],'t')}
+        <div class="sec-label teal" style="margin-top:5mm;">Meer workshops?</div>${evalBars(A.meer,['Ja','Nee','Weet ik niet'],'t')}</div>
+    </div></div>
+    <div class="section"><div class="sec-label">Wat het meest geleerd</div>${quotes}</div>
+    <div class="section"><div class="sec-label teal">Organisatie-evaluatie</div>${orgBlok}</div>
+    </div><div class="footer"><div class="footer-txt">Samen Digitaal Sterk · Rotterdam 2026</div><div class="footer-txt">Evaluatierapport · ${orgTekst}</div></div><div class="bar" style="margin-top:2mm;"></div></div>`;
+}
+function printEvaluatieRapport(wsId){
+  if(!wsId){ alert('Geen workshop gekozen.'); return; }
+  const DOC=`<!DOCTYPE html><html lang="nl"><head><meta charset="UTF-8"><title>Evaluatierapport</title><style>${EVAL_RAPPORT_CSS}</style></head><body>${evalRapportPage(wsId)}</body></html>`;
+  const w=window.open('','_blank'); w.document.write(DOC); w.document.close(); w.focus(); setTimeout(()=>w.print(),700);
+}
+function printGemeenteEvaluatie(){
+  ensureSchema();
+  const wss=[...db.workshops].sort((a,b)=>a.dag1>b.dag1?1:-1).filter(w=>db.evaluaties.some(e=>e.wsId===w.id&&e.type==='d'));
+  let N=0,cijAll=[],aanbPosAll=0,aanbTotAll=0,meerJaAll=0,meerTotAll=0,alleQuotes=[];
+  const rows=wss.map(w=>{const A=evalAggr(w.id);N+=A.n;cijAll=cijAll.concat(A.cijfers);aanbPosAll+=A.aanbPos;aanbTotAll+=A.aanbTot;meerJaAll+=A.meer['Ja'];meerTotAll+=A.meerTot;alleQuotes=alleQuotes.concat(A.geleerd);
+    const pa=A.aanbTot?Math.round(A.aanbPos/A.aanbTot*100):0;
+    return `<div class="brow"><div class="blab" style="width:62mm;font-size:9.5pt;">${w.org}${w.wijk?' — '+w.wijk:''}</div><div class="btrack"><div class="bfill o" style="width:${A.gem!=null?Math.round(A.gem/10*100):0}%;"></div></div><div class="bval">${A.gem!=null?A.gem.toFixed(1):'—'}</div><div style="width:24mm;text-align:right;font-size:9pt;color:#777;">${A.n} form · ${pa}%</div></div>`;}).join('');
+  const gem=cijAll.length?(cijAll.reduce((a,b)=>a+b,0)/cijAll.length):null;
+  const pctAanb=aanbTotAll?Math.round(aanbPosAll/aanbTotAll*100):0;
+  const quotes=alleQuotes.slice(0,8).map(q=>`<div class="qbox">${q}</div>`).join('')||'<div style="font-size:10pt;color:#aaa;">—</div>';
+  const page=`<div class="page">${evalHEAD()}<div class="body">${evalTB('Evaluatie — Gemeente')}
+    <div class="ws-sub">Programma Digitale Inclusie · ${new Date().toLocaleDateString('nl-NL',{day:'numeric',month:'long',year:'numeric'})}</div>
+    <div class="section"><div class="sec-label">Totaal</div>
+      <div class="stat-grid">
+        <div class="stat stat-o"><div class="stat-n">${wss.length}</div><div class="stat-l">Workshops</div></div>
+        <div class="stat stat-o"><div class="stat-n">${N}</div><div class="stat-l">Formulieren</div></div>
+        <div class="stat stat-t"><div class="stat-n">${gem!=null?gem.toFixed(1):'—'}</div><div class="stat-l">Gem. cijfer /10</div></div>
+        <div class="stat stat-t"><div class="stat-n">${pctAanb}%</div><div class="stat-l">Beveelt aan</div></div>
+      </div></div>
+    <div class="section"><div class="sec-label">Gemiddeld cijfer per workshop</div>${rows||'<div style="font-size:10pt;color:#aaa;">Nog geen evaluaties ingevoerd.</div>'}</div>
+    <div class="section"><div class="sec-label teal">Wat deelnemers het meest leerden</div>${quotes}</div>
+    </div><div class="footer"><div class="footer-txt">Samen Digitaal Sterk · Rotterdam 2026</div><div class="footer-txt">Evaluatie · Gemeente Rotterdam</div></div><div class="bar" style="margin-top:2mm;"></div></div>`;
+  const DOC=`<!DOCTYPE html><html lang="nl"><head><meta charset="UTF-8"><title>Evaluatie Gemeente</title><style>${EVAL_RAPPORT_CSS}</style></head><body>${page}</body></html>`;
+  const w=window.open('','_blank'); w.document.write(DOC); w.document.close(); w.focus(); setTimeout(()=>w.print(),700);
 }
 
 // ── EDIT DEELNEMER ──
@@ -1001,7 +1155,9 @@ function renderWorkshops(preOrgId) {
     const d=db.deelnemers.filter(x=>x.wsId===w.id);
     const n=d.length, a1=d.filter(x=>x.les1==='ja').length, a2=d.filter(x=>x.les2==='ja').length;
     const vw=db.vrijwilligers.filter(x=>x.wsId===w.id);
-    const ev=(db.evaluaties||[]).find(e=>e.wsId===w.id);
+    const evD=(db.evaluaties||[]).filter(e=>e.wsId===w.id&&e.type==='d');
+    const evO=(db.evaluaties||[]).find(e=>e.wsId===w.id&&e.type==='o');
+    const ev=evD.length||evO;
     const cal=calUrl(w);
     const deelnRijen = d.length ? d.map(dl=>`
       <div class="row-item" style="flex-wrap:wrap;gap:6px;padding:5px 0;border-bottom:1px solid #f0f0f0;">
@@ -1021,7 +1177,7 @@ function renderWorkshops(preOrgId) {
     return `<div class="card">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;">
         <div style="flex:1;">
-          <div style="font-weight:600;font-size:14px;">${w.org}${w.wijk?' <span style="font-weight:400;color:#888;">— '+w.wijk+'</span>':''}${ev?' <span style="font-size:10px;color:#4DA99A;font-weight:600;">✓ geëvalueerd</span>':''}</div>
+          <div style="font-weight:600;font-size:14px;">${w.org}${w.wijk?' <span style="font-weight:400;color:#888;">— '+w.wijk+'</span>':''}${ev?` <span style="font-size:10px;color:#4DA99A;font-weight:600;">✓ ${evD.length} evaluatie${evD.length===1?'':'s'}</span>`:''}</div>
           <div style="font-size:12px;color:#666;margin-top:2px;">
             📅 ${fmtDate(w.dag1)} &amp; ${fmtDate(w.dag2)}${w.tijd?' · '+w.tijd:''}
             <a href="${cal.url1}" target="_blank" style="font-size:10px;color:#4DA99A;text-decoration:none;margin-left:4px;" title="Dag 1 agenda">📆D1</a>
@@ -1049,6 +1205,13 @@ function renderWorkshops(preOrgId) {
         <!-- Aanwezigheid -->
         <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#E8943A;margin-bottom:4px;">Aanwezigheid</div>
         ${deelnRijen}
+
+        <!-- Evaluaties -->
+        <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#1C1E20;margin:12px 0 6px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          <span>Evaluaties (${evD.length})</span>
+          ${evD.length?`<button class="btn btn-sm btn-t" onclick="printEvaluatieRapport(${w.id})" style="font-size:10px;padding:2px 8px;background:#4DA99A;border-color:#4DA99A;color:#fff;">📊 Rapport</button>`:''}
+        </div>
+        ${evalBullets(w.id)}
 
         <!-- Vrijwilligers sectie -->
         <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#4DA99A;margin:12px 0 6px;">Vrijwilligers (${vw.length})</div>
@@ -1340,7 +1503,7 @@ function printWorkshoprapport(){
   @page portrait { size:A4 portrait; margin:0; }
   @page landscape { size:A4 landscape; margin:0; }
   html, body { background:#e9e9e9; font-family:'Source Sans 3',Arial,sans-serif; color:#1C1E20; }
-  .page { width:190mm; min-height:252mm; background:white; display:flex; flex-direction:column; margin:0 auto 8mm; padding-top:6mm; box-shadow:0 2px 16px rgba(0,0,0,.15); page:portrait; page-break-after:always; }
+  .page { width:190mm; min-height:auto; background:white; display:flex; flex-direction:column; margin:0 auto 8mm; padding-top:6mm; box-shadow:0 2px 16px rgba(0,0,0,.15); page:portrait; page-break-after:always; }
   .page.land { width:277mm; min-height:auto; height:194mm; page:landscape; }
   .page:last-child { page-break-after:auto; }
   .bar { height:6px; background:linear-gradient(to right,#E8943A 50%,#4DA99A 50%); flex-shrink:0; }
@@ -1430,15 +1593,12 @@ function renderEvaluatie(){
   const and=db.deelnemers.filter(d=>d.apparaat==='Android').length;
   const cert=db.deelnemers.filter(d=>d.les1==='ja'||d.les2==='ja').length;
   const vwUniek=[...new Set(db.vrijwilligers.map(v=>v.naam))];
-  const evs=db.evaluaties||[];
-  let nForm=0,cijSom=0,cijN=0,aanbPos=0,aanbN=0,meerJa=0,meerN=0;
-  evs.forEach(e=>{const dd=e.deelnemer||{};nForm+=dd.aantal||0;
-    const c=dd.cijfers||{};for(let k=1;k<=10;k++){cijSom+=k*(c[k]||0);cijN+=(c[k]||0);}
-    const a=dd.aanbevelen||{};aanbPos+=(a.ja||0)+(a.zeker||0);aanbN+=(a.nee||0)+(a.misschien||0)+(a.ja||0)+(a.zeker||0);
-    const m=dd.meer||{};meerJa+=(m.ja||0);meerN+=(m.ja||0)+(m.nee||0)+(m.weet||0);});
-  const gemCijfer=cijN?(cijSom/cijN).toFixed(1):'—';
-  const pctAanb=aanbN?Math.round(aanbPos/aanbN*100):0;
-  const pctMeer=meerN?Math.round(meerJa/meerN*100):0;
+  const evWss=db.workshops.filter(w=>(db.evaluaties||[]).some(e=>e.wsId===w.id&&e.type==='d'));
+  let nForm=0,cijAll=[],aPos=0,aTot=0,mJa=0,mTot=0;
+  evWss.forEach(w=>{const A=evalAggr(w.id);nForm+=A.n;cijAll=cijAll.concat(A.cijfers);aPos+=A.aanbPos;aTot+=A.aanbTot;mJa+=A.meer['Ja'];mTot+=A.meerTot;});
+  const gemCijfer=cijAll.length?(cijAll.reduce((a,b)=>a+b,0)/cijAll.length).toFixed(1):'—';
+  const pctAanb=aTot?Math.round(aPos/aTot*100):0;
+  const pctMeer=mTot?Math.round(mJa/mTot*100):0;
   el.innerHTML=`
   <div class="stat-grid">
     <div class="stat"><div class="stat-n">${totWs}<span style="font-size:14px;color:#aaa;">/10</span></div><div class="stat-l">Workshops</div></div>
@@ -1453,23 +1613,28 @@ function renderEvaluatie(){
     <div class="stat"><div class="stat-n">${totD-iph-and}</div><div class="stat-l">Overig</div></div>
   </div>
   <div class="card">
-    <div class="card-title">Evaluaties deelnemers ${evs.length?`· ${evs.length} workshop(s) · ${nForm} formulieren`:''}</div>
-    ${evs.length?`<div class="stat-grid">
+    <div class="card-title">Evaluaties deelnemers ${evWss.length?`· ${evWss.length} workshop(s) · ${nForm} formulieren`:''}</div>
+    ${evWss.length?`<div class="stat-grid">
       <div class="stat"><div class="stat-n" style="color:#E8943A;">${gemCijfer}<span style="font-size:14px;color:#aaa;">/10</span></div><div class="stat-l">Gem. cijfer</div></div>
       <div class="stat"><div class="stat-n" style="color:#4DA99A;">${pctAanb}%</div><div class="stat-l">Beveelt aan</div></div>
       <div class="stat"><div class="stat-n">${pctMeer}%</div><div class="stat-l">Wil meer</div></div>
       <div class="stat"><div class="stat-n">${nForm}</div><div class="stat-l">Reacties</div></div>
-    </div>`:'<div class="lege">Nog geen evaluaties ingevoerd. Gebruik 📝 Evaluatie op een workshopkaart.</div>'}
+    </div>
+    <button class="btn btn-t" onclick="printGemeenteEvaluatie()" style="margin-top:12px;">🏛 Gemeente-evaluatie (print)</button>`:'<div class="lege">Nog geen evaluaties ingevoerd. Gebruik 📝 Evaluatie op een workshopkaart.</div>'}
   </div>
   <div class="card">
     <div class="card-title">Per workshop</div>
     ${[...db.workshops].sort((a,b)=>a.dag1>b.dag1?1:-1).map(w=>{
       const d=db.deelnemers.filter(x=>x.wsId===w.id);
       const c=d.filter(x=>x.les1==='ja'||x.les2==='ja').length;
-      return `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f0f0f0;font-size:13px;">
+      const A=evalAggr(w.id);
+      return `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #f0f0f0;font-size:13px;">
         <div><div style="font-weight:600;">${w.org}${w.wijk?' — '+w.wijk:''}</div>
         <div style="font-size:11px;color:#888;">${fmtDateShort(w.dag1)} &amp; ${fmtDateShort(w.dag2)}</div></div>
-        <div style="text-align:right;font-size:12px;color:#888;">${d.length} deeln · 🎓${c}</div>
+        <div style="text-align:right;font-size:12px;color:#888;display:flex;align-items:center;gap:10px;">
+          <span>${d.length} deeln · 🎓${c}${A.n?` · ⭐${A.gem!=null?A.gem.toFixed(1):'—'} (${A.n})`:''}</span>
+          ${A.n?`<button class="btn btn-sm btn-t" onclick="printEvaluatieRapport(${w.id})" style="font-size:10px;padding:2px 8px;background:#4DA99A;border-color:#4DA99A;color:#fff;">📊</button>`:''}
+        </div>
       </div>`;
     }).join('')||'<div class="lege">Nog geen workshops.</div>'}
   </div>
@@ -1488,17 +1653,13 @@ function genRapport(){
   const cert=db.deelnemers.filter(d=>d.les1==='ja'||d.les2==='ja').length;
   const vwUniek=[...new Set(db.vrijwilligers.map(v=>v.naam))];
   const wijken=[...new Set(db.workshops.map(w=>w.wijk).filter(Boolean))].join(', ');
-  const evs=db.evaluaties||[];
-  let nForm=0,cijSom=0,cijN=0,aanbPos=0,aanbN=0,meerJa=0,meerN=0;
-  evs.forEach(e=>{const dd=e.deelnemer||{};nForm+=dd.aantal||0;
-    const c=dd.cijfers||{};for(let k=1;k<=10;k++){cijSom+=k*(c[k]||0);cijN+=(c[k]||0);}
-    const a=dd.aanbevelen||{};aanbPos+=(a.ja||0)+(a.zeker||0);aanbN+=(a.nee||0)+(a.misschien||0)+(a.ja||0)+(a.zeker||0);
-    const m=dd.meer||{};meerJa+=(m.ja||0);meerN+=(m.ja||0)+(m.nee||0)+(m.weet||0);});
-  const gemCijfer=cijN?(cijSom/cijN).toFixed(1):'—';
-  const pctAanb=aanbN?Math.round(aanbPos/aanbN*100):0;
-  const pctMeer=meerN?Math.round(meerJa/meerN*100):0;
-  const quotes=evs.map(e=>(e.deelnemer&&e.deelnemer.meestGeleerd||'').trim()).filter(Boolean);
-  const evalTxt=evs.length?`\n\nEVALUATIE DEELNEMERS\nIngevulde formulieren: ${nForm}\nGemiddeld cijfer: ${gemCijfer}/10\nBeveelt workshop aan: ${pctAanb}%\nWil meer workshops: ${pctMeer}%${quotes.length?'\n\nWat deelnemers het meest leerden:\n'+quotes.map(q=>'• '+q).join('\n'):''}`:'';
+  const evWss=db.workshops.filter(w=>(db.evaluaties||[]).some(e=>e.wsId===w.id&&e.type==='d'));
+  let nForm=0,cijAll=[],aPos=0,aTot=0,mJa=0,mTot=0,quotes=[];
+  evWss.forEach(w=>{const A=evalAggr(w.id);nForm+=A.n;cijAll=cijAll.concat(A.cijfers);aPos+=A.aanbPos;aTot+=A.aanbTot;mJa+=A.meer['Ja'];mTot+=A.meerTot;quotes=quotes.concat(A.geleerd);});
+  const gemCijfer=cijAll.length?(cijAll.reduce((a,b)=>a+b,0)/cijAll.length).toFixed(1):'—';
+  const pctAanb=aTot?Math.round(aPos/aTot*100):0;
+  const pctMeer=mTot?Math.round(mJa/mTot*100):0;
+  const evalTxt=evWss.length?`\n\nEVALUATIE DEELNEMERS\nIngevulde formulieren: ${nForm}\nGemiddeld cijfer: ${gemCijfer}/10\nBeveelt workshop aan: ${pctAanb}%\nWil meer workshops: ${pctMeer}%${quotes.length?'\n\nWat deelnemers het meest leerden:\n'+quotes.slice(0,12).map(q=>'• '+q).join('\n'):''}`:'';
   const txt=`EVALUATIERAPPORT — SAMEN DIGITAAL STERK 2026\nGemeente Rotterdam — Programma Digitale Inclusie\nGegenereerd: ${new Date().toLocaleDateString('nl-NL',{day:'numeric',month:'long',year:'numeric'})}\n\nSAMENVATTING\nUitgevoerde workshops: ${totWs}/10\nWijken: ${wijken||'diverse Rotterdamse wijken'}\n\nBEREIK\nTotaal deelnemers: ${totD}\nAanwezig beide dagdelen: ${beid} (${totD>0?Math.round(beid/totD*100):0}%)\nCertificaten: ${cert}\nVrijwilligers: ${vwUniek.length} (${vwUniek.join(', ')})\n\nAPPARATEN\niPhone: ${iph} · Android: ${and} · Overig: ${totD-iph-and}\n\nWORKSHOPS\n${db.workshops.map(w=>{const d=db.deelnemers.filter(x=>x.wsId===w.id);const c=d.filter(x=>x.les1==='ja'||x.les2==='ja').length;return`• ${w.org}${w.wijk?' ('+w.wijk+')':''} | ${fmtDateShort(w.dag1)} & ${fmtDateShort(w.dag2)} | ${d.length} deeln | 🎓${c}`;}).join('\n')}${evalTxt}`;
   window._rapport=txt;
   document.getElementById('rapport-out').innerHTML=`<div style="background:#1C1E20;color:#ddd;border-radius:10px;padding:16px;font-family:monospace;font-size:11px;line-height:1.7;white-space:pre-wrap;">${txt}</div>
