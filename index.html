@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Samen Digitaal Sterk — Beheer v8v</title>
+<title>Samen Digitaal Sterk — Beheer v8w</title>
 <style>
 @font-face {
   font-family: 'Bebas Neue';
@@ -151,7 +151,7 @@ input[readonly]{background:#f9f9f9;color:#888;}
   <div class="topbar-logo">📋</div>
   <div>
     <div style="font-size:15px;font-weight:600;">Samen Digitaal Sterk</div>
-    <div style="font-size:11px;color:#aaa;">Beheer · v8v · Rotterdam 2026</div>
+    <div style="font-size:11px;color:#aaa;">Beheer · v8w · Rotterdam 2026</div>
   </div>
   <div style="margin-left:auto;display:flex;align-items:center;gap:12px;">
     <span id="rol-badge" style="display:none;font-size:11px;color:#aaa;"></span>
@@ -1448,7 +1448,10 @@ function renderCertificaten(){
   const el=document.getElementById('cert-content'); if(!wsId){el.innerHTML='';return;}
   const ws=db.workshops.find(w=>w.id===wsId);
   const deeln=db.deelnemers.filter(d=>d.wsId===wsId&&(d.les1==='ja'||d.les2==='ja'));
-  if(!deeln.length){el.innerHTML=`<div class="card"><div class="lege">Geen deelnemers met aanwezigheid.</div></div>`;return;}
+  if(!deeln.length){el.innerHTML=`<div class="card"><div class="lege">Geen deelnemers met aanwezigheid.</div>
+    <div style="margin-top:12px;padding-top:10px;border-top:1px solid #eee;">
+      <button class="btn btn-o" onclick="printCertBlanco('${ws.org}','${ws.wijk||''}','${ws.adres||''}','${fmtDate(ws.dag1)}','${fmtDate(ws.dag2)}')">🖨 Blanco certificaat</button>
+    </div></div>`;return;}
   el.innerHTML=`<div class="card">
     <div class="card-title">🎓 ${deeln.length} certificaat${deeln.length!==1?'en':''}</div>
     <div style="font-size:12px;color:#888;margin-bottom:8px;">${ws.org}${ws.wijk?' — '+ws.wijk:''} · ${fmtDate(ws.dag1)} &amp; ${fmtDate(ws.dag2)}</div>
@@ -1461,6 +1464,7 @@ function renderCertificaten(){
     </div>`).join('')}
     <div style="margin-top:12px;padding-top:10px;border-top:1px solid #eee;">
       <button class="btn btn-t" onclick="printAll(${wsId})">📄 Alle ${deeln.length} printen</button>
+      <button class="btn btn-o" onclick="printCertBlanco('${ws.org}','${ws.wijk||''}','${ws.adres||''}','${fmtDate(ws.dag1)}','${fmtDate(ws.dag2)}')">🖨 Blanco certificaat</button>
     </div>
   </div>`;
 }
@@ -2242,6 +2246,12 @@ function certHtml(naam, org, wijk, adres, dag1, dag2, inline) {
 function printCert(naam, org, wijk, adres, dag1, dag2) {
   const w = window.open('','_blank');
   w.document.write(certHtml(naam, org, wijk, adres, dag1, dag2));
+  w.document.close(); w.focus();
+  setTimeout(()=>w.print(), 600);
+}
+function printCertBlanco(org, wijk, adres, dag1, dag2) {
+  const w = window.open('','_blank');
+  w.document.write(certHtml('\u00A0', org, wijk, adres, dag1, dag2));
   w.document.close(); w.focus();
   setTimeout(()=>w.print(), 600);
 }
