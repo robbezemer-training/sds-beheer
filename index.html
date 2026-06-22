@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Samen Digitaal Sterk — Beheer v8x</title>
+<title>Samen Digitaal Sterk — Beheer v8y</title>
 <style>
 @font-face {
   font-family: 'Bebas Neue';
@@ -151,7 +151,7 @@ input[readonly]{background:#f9f9f9;color:#888;}
   <div class="topbar-logo">📋</div>
   <div>
     <div style="font-size:15px;font-weight:600;">Samen Digitaal Sterk</div>
-    <div style="font-size:11px;color:#aaa;">Beheer · v8x · Rotterdam 2026</div>
+    <div style="font-size:11px;color:#aaa;">Beheer · v8y · Rotterdam 2026</div>
   </div>
   <div style="margin-left:auto;display:flex;align-items:center;gap:12px;">
     <span id="rol-badge" style="display:none;font-size:11px;color:#aaa;"></span>
@@ -235,21 +235,14 @@ input[readonly]{background:#f9f9f9;color:#888;}
 
 <!-- VRIJWILLIGERS -->
 <div id="tab-vrijwilligers" class="section">
-  <div class="card">
-    <label style="font-weight:600;">Workshop</label>
-    <select id="sel-ws-vw" onchange="renderVrijwilligers()" style="margin-top:5px;"></select>
-  </div>
   <div id="vw-list"></div>
   <div id="vw-add" style="display:none;">
     <div class="card" style="border:2px dashed #ddd;background:#fafafa;">
       <div class="card-title">+ Vrijwilliger toevoegen</div>
       <div class="form-row">
         <div><label>Naam *</label><input id="vw-naam" placeholder="Naam"></div>
+        <div><label>Rol</label><input id="vw-rol" placeholder="Vrijwilliger"></div>
         <div><label>Organisatie</label><input id="vw-org" placeholder="SMC of HvdW"></div>
-      </div>
-      <div class="form-row">
-        <div><label>Dag 1</label><select id="vw-d1"><option value="">Onbekend</option><option value="ja">Ja ✓</option><option value="nee">Nee ✗</option></select></div>
-        <div><label>Dag 2</label><select id="vw-d2"><option value="">Onbekend</option><option value="ja">Ja ✓</option><option value="nee">Nee ✗</option></select></div>
       </div>
       <div class="form-row full"><div><label>Opmerking</label><input id="vw-notitie" placeholder="optioneel"></div></div>
       <button class="btn btn-o" onclick="addVrijwilliger()" style="margin-top:6px;">+ Toevoegen</button>
@@ -347,7 +340,37 @@ input[readonly]{background:#f9f9f9;color:#888;}
 <script>
 // ── DATA ──
 let db = { organisaties:[], workshops:[], deelnemers:[], vrijwilligers:[], evaluaties:[] };
-function ensureSchema(){ if(!db.evaluaties) db.evaluaties=[]; }
+function ensureSchema(){
+  if(!db.evaluaties) db.evaluaties=[];
+  if(!db.vrijwilligers) db.vrijwilligers=[];
+  if(!db.wsVrijw){
+    // Eenmalige migratie: oud model (vrijwilliger = persoon-per-workshop met wsId/dag1/dag2)
+    // -> persoonsrecords (db.vrijwilligers) + koppelingen (db.wsVrijw).
+    const sleutel=v=>(v && v.naam?String(v.naam):'').trim().toLowerCase();
+    const oud=db.vrijwilligers.filter(v=>v && v.wsId!==undefined && v.wsId!==null);
+    if(oud.length){
+      const personen=[]; const koppel=[];
+      const vind=v=>personen.find(p=>sleutel(p)===sleutel(v));
+      oud.forEach(v=>{
+        let p=vind(v);
+        if(!p){ p={id:(typeof v.id==='number'?v.id:Date.now()+Math.floor(Math.random()*1e6)), naam:(v.naam||'').trim(), rol:v.rol||'', org:v.org||'', notitie:v.notitie||''}; personen.push(p); }
+        else { if(!p.org && v.org) p.org=v.org; if(!p.notitie && v.notitie) p.notitie=v.notitie; }
+        koppel.push({wsId:v.wsId, vId:p.id, dag1:v.dag1||'', dag2:v.dag2||''});
+      });
+      // personen die toevallig al zonder wsId stonden behouden
+      db.vrijwilligers.filter(v=>v && (v.wsId===undefined||v.wsId===null)).forEach(v=>{
+        if(!vind(v)) personen.push({id:(typeof v.id==='number'?v.id:Date.now()+Math.floor(Math.random()*1e6)), naam:(v.naam||'').trim(), rol:v.rol||'', org:v.org||'', notitie:v.notitie||''});
+      });
+      db.vrijwilligers=personen; db.wsVrijw=koppel;
+    } else {
+      db.wsVrijw=[];
+      db.vrijwilligers=db.vrijwilligers.map(v=>({id:v.id, naam:v.naam, rol:v.rol||'', org:v.org||'', notitie:v.notitie||''}));
+    }
+  }
+}
+function vwPersoon(vId){ return (db.vrijwilligers||[]).find(p=>p.id===vId); }
+function vwKoppel(wsId,vId){ return (db.wsVrijw||[]).find(k=>k.wsId===wsId&&k.vId===vId); }
+function vwForWs(wsId){ return (db.wsVrijw||[]).filter(k=>k.wsId===wsId).map(k=>{ const p=vwPersoon(k.vId)||{naam:'?',org:'',rol:'',notitie:''}; return {vId:k.vId, wsId:k.wsId, naam:p.naam, rol:p.rol, org:p.org, notitie:p.notitie, dag1:k.dag1||'', dag2:k.dag2||''}; }); }
 let cntContacts = 1;
 
 // ── ROLLEN ──
@@ -406,7 +429,7 @@ function showTab(t, el) {
   document.getElementById('tab-'+t).classList.add('active'); el.classList.add('active');
   if(t==='workshops') renderWorkshops();
   if(t==='deelnemers'){ populateWsSel('sel-ws-d'); renderDeelnemers(); }
-  if(t==='vrijwilligers'){ populateWsSel('sel-ws-vw'); renderVrijwilligers(); }
+  if(t==='vrijwilligers'){ renderVrijwilligers(); }
   if(t==='certificaten'){ populateWsSel('sel-ws-c'); renderCertificaten(); }
   if(t==='formulieren'){ populateWsSel('sel-ws-f'); renderFormulierPreview(); }
   if(t==='evaluatie') renderEvaluatie();
@@ -479,7 +502,7 @@ function importDataPrompt(){
   const inp=document.createElement('input'); inp.type='file'; inp.accept='.json';
   inp.onchange=e=>{
     const r=new FileReader();
-    r.onload=ev=>{ try{ const d=JSON.parse(ev.target.result); if(!d.workshops){alert('Ongeldig.');return;} if(!confirm('Data vervangen?'))return; db=d; save(); render(); alert('Geïmporteerd ✓'); }catch(err){alert('Fout.');} };
+    r.onload=ev=>{ try{ const d=JSON.parse(ev.target.result); if(!d.workshops){alert('Ongeldig.');return;} if(!confirm('Data vervangen?'))return; db=d; ensureSchema(); save(); render(); alert('Geïmporteerd ✓'); }catch(err){alert('Fout.');} };
     r.readAsText(e.target.files[0]);
   }; inp.click();
 }
@@ -509,7 +532,7 @@ function orgFlowStap(o) {
   const cert=d.filter(x=>x.les1==='ja'||x.les2==='ja');
   if(cert.length) return 6;
   if(d.length) return 5;
-  const vw=db.vrijwilligers.filter(x=>x.wsId===ws.id);
+  const vw=vwForWs(ws.id);
   if(vw.length) return 4;
   if(o.flyer) return 3;
   return 2;
@@ -975,30 +998,19 @@ function editVrijwilliger(id) {
   document.getElementById('modal-body').innerHTML = `
     <div class="form-row">
       <div><label>Naam *</label><input id="e-naam" value="${v.naam||''}"></div>
+      <div><label>Rol</label><input id="e-rol" value="${v.rol||''}" placeholder="Vrijwilliger"></div>
       <div><label>Organisatie</label><input id="e-org" value="${v.org||''}"></div>
     </div>
-    <div class="form-row">
-      <div><label>Dag 1</label><select id="e-d1">
-        <option value="" ${!v.dag1?'selected':''}>—</option>
-        <option value="ja" ${v.dag1==='ja'?'selected':''}>Ja</option>
-        <option value="nee" ${v.dag1==='nee'?'selected':''}>Nee</option>
-      </select></div>
-      <div><label>Dag 2</label><select id="e-d2">
-        <option value="" ${!v.dag2?'selected':''}>—</option>
-        <option value="ja" ${v.dag2==='ja'?'selected':''}>Ja</option>
-        <option value="nee" ${v.dag2==='nee'?'selected':''}>Nee</option>
-      </select></div>
-    </div>
-    <div class="form-row full"><div><label>Notitie</label><input id="e-notitie" value="${v.notitie||''}"></div></div>`;
+    <div class="form-row full"><div><label>Notitie</label><input id="e-notitie" value="${v.notitie||''}"></div></div>
+    <div style="font-size:11px;color:#888;margin-top:4px;">Aanwezigheid per dagdeel stel je in bij de workshop zelf.</div>`;
   openModal('Vrijwilliger bewerken');
 }
 
 function slaVrijwilligerOp() {
   const v = db.vrijwilligers.find(x => x.id === modalId); if (!v) return;
   v.naam = document.getElementById('e-naam').value.trim() || v.naam;
+  const rolEl=document.getElementById('e-rol'); if(rolEl) v.rol = rolEl.value.trim();
   v.org = document.getElementById('e-org').value.trim();
-  v.dag1 = document.getElementById('e-d1').value;
-  v.dag2 = document.getElementById('e-d2').value;
   v.notitie = document.getElementById('e-notitie').value;
   save(); sluitModal(); renderVrijwilligers(); renderOrgs(); renderWorkshops();
 }
@@ -1031,18 +1043,29 @@ function addDeelnemerWs(wsId) {
 function addVrijwilligerWs(wsId) {
   const naam = document.getElementById('ws-vw-naam-'+wsId).value.trim();
   if (!naam) { alert('Vul naam in.'); return; }
-  db.vrijwilligers.push({
-    id: Date.now(), wsId, naam,
-    org: document.getElementById('ws-vw-org-'+wsId).value.trim(),
-    dag1: document.getElementById('ws-vw-d1-'+wsId).value,
-    dag2: document.getElementById('ws-vw-d2-'+wsId).value,
-    notitie: ''
-  });
-  save();
-  ['ws-vw-naam-','ws-vw-org-'].forEach(p => {
-    const el = document.getElementById(p+wsId); if(el) el.value='';
-  });
+  const org = document.getElementById('ws-vw-org-'+wsId).value.trim();
+  let p = (db.vrijwilligers||[]).find(x=>(x.naam||'').trim().toLowerCase()===naam.toLowerCase());
+  if (!p) { p = {id:Date.now(), naam, rol:'', org, notitie:''}; db.vrijwilligers.push(p); }
+  else if (!p.org && org) p.org = org;
+  if (!vwKoppel(wsId,p.id)) db.wsVrijw.push({wsId, vId:p.id, dag1:'', dag2:''});
+  openWsPanels.add(wsId); save();
+  ['ws-vw-naam-','ws-vw-org-'].forEach(pre => { const el=document.getElementById(pre+wsId); if(el) el.value=''; });
   renderWorkshops(); renderOrgs(); renderVrijwilligers();
+}
+function koppelVrijwWs(wsId){
+  const sel=document.getElementById('ws-vw-sel-'+wsId); const vId=sel?parseInt(sel.value):NaN;
+  if(!vId){ alert('Kies een vrijwilliger.'); return; }
+  if(!vwKoppel(wsId,vId)) db.wsVrijw.push({wsId, vId, dag1:'', dag2:''});
+  openWsPanels.add(wsId); save(); renderWorkshops(); renderOrgs();
+}
+function setVrijwAanwWs(wsId,vId,veld){
+  const k=vwKoppel(wsId,vId); if(!k) return;
+  k[veld] = k[veld]==='ja' ? '' : 'ja';
+  openWsPanels.add(wsId); save(); renderWorkshops(); renderOrgs();
+}
+function removeVrijwWs(wsId,vId){
+  db.wsVrijw=(db.wsVrijw||[]).filter(k=>!(k.wsId===wsId&&k.vId===vId));
+  openWsPanels.add(wsId); save(); renderWorkshops(); renderOrgs();
 }
 
 function deleteOrg(id){ if(!confirm('Organisatie verwijderen?'))return; db.organisaties=db.organisaties.filter(x=>x.id!==id); save(); renderOrgs(); }
@@ -1149,8 +1172,8 @@ function renderOrgs() {
 
         <!-- VRIJWILLIGERS -->
         <div class="org-section">
-          <div class="org-section-title">Vrijwilligers ${ws?'('+db.vrijwilligers.filter(v=>v.wsId===ws.id).length+')':''}</div>
-          ${ws?db.vrijwilligers.filter(v=>v.wsId===ws.id).map(v=>`<div style="font-size:12px;margin-bottom:2px;">🙋 ${v.naam}${v.org?' ('+v.org+')':''} <span class="badge ${v.dag1==='ja'?'b-groen':'b-grijs'}">D1</span> <span class="badge ${v.dag2==='ja'?'b-groen':'b-grijs'}">D2</span></div>`).join('')||'<div style="font-size:12px;color:#aaa;">Nog geen vrijwilligers gekoppeld.</div>':'<div style="font-size:12px;color:#aaa;">Eerst workshop aanmaken.</div>'}
+          <div class="org-section-title">Vrijwilligers ${ws?'('+vwForWs(ws.id).length+')':''}</div>
+          ${ws?vwForWs(ws.id).map(v=>`<div style="font-size:12px;margin-bottom:2px;">🙋 ${v.naam}${v.org?' ('+v.org+')':''} <span class="badge ${v.dag1==='ja'?'b-groen':'b-grijs'}">D1</span> <span class="badge ${v.dag2==='ja'?'b-groen':'b-grijs'}">D2</span></div>`).join('')||'<div style="font-size:12px;color:#aaa;">Nog geen vrijwilligers gekoppeld.</div>':'<div style="font-size:12px;color:#aaa;">Eerst workshop aanmaken.</div>'}
         </div>
 
         <!-- DEELNEMERS -->
@@ -1197,7 +1220,7 @@ function renderWorkshops(preOrgId) {
   let html = sorted.map(w=>{
     const d=db.deelnemers.filter(x=>x.wsId===w.id);
     const n=d.length, a1=d.filter(x=>x.les1==='ja').length, a2=d.filter(x=>x.les2==='ja').length;
-    const vw=db.vrijwilligers.filter(x=>x.wsId===w.id);
+    const vw=vwForWs(w.id);
     const evD=(db.evaluaties||[]).filter(e=>e.wsId===w.id&&e.type==='d');
     const evO=(db.evaluaties||[]).find(e=>e.wsId===w.id&&e.type==='o');
     const ev=evD.length||evO;
@@ -1259,26 +1282,34 @@ function renderWorkshops(preOrgId) {
         <!-- Vrijwilligers sectie -->
         <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#4DA99A;margin:12px 0 6px;">Vrijwilligers (${vw.length})</div>
         ${vw.length ? vw.map(v=>`
-          <div class="row-item" style="padding:4px 0;border-bottom:1px solid #f0f0f0;font-size:12px;">
-            <div style="flex:1;">${v.naam}${v.org?' <span style="color:#aaa;">('+v.org+')</span>':''}</div>
-            <span class="badge ${v.dag1==='ja'?'b-groen':'b-grijs'}">D1</span>
-            <span class="badge ${v.dag2==='ja'?'b-groen':'b-grijs'}">D2</span>
-            <button class="btn btn-sm btn-o" onclick="editVrijwilliger(${v.id})" style="font-size:10px;padding:2px 6px;">✏️</button>
-            <button class="btn btn-del btn-sm" onclick="deleteVw(${v.id})" style="font-size:10px;padding:2px 6px;">🗑</button>
-          </div>`).join('') : '<div style="font-size:12px;color:#aaa;margin-bottom:6px;">Nog geen vrijwilligers.</div>'}
+          <div class="row-item" style="flex-wrap:wrap;gap:6px;padding:5px 0;border-bottom:1px solid #f0f0f0;font-size:12px;">
+            <div style="flex:1;min-width:120px;">${v.naam}${v.org?' <span style="color:#aaa;">('+v.org+')</span>':''}</div>
+            <div style="display:flex;align-items:center;gap:10px;">
+              <label style="display:flex;align-items:center;gap:4px;font-size:11px;color:#555;font-weight:600;cursor:pointer;">D1<input type="checkbox" ${v.dag1==='ja'?'checked':''} onclick="setVrijwAanwWs(${w.id},${v.vId},'dag1')" style="width:15px;height:15px;cursor:pointer;accent-color:#4DA99A;"></label>
+              <label style="display:flex;align-items:center;gap:4px;font-size:11px;color:#555;font-weight:600;cursor:pointer;">D2<input type="checkbox" ${v.dag2==='ja'?'checked':''} onclick="setVrijwAanwWs(${w.id},${v.vId},'dag2')" style="width:15px;height:15px;cursor:pointer;accent-color:#4DA99A;"></label>
+              <button class="btn btn-sm btn-o" onclick="editVrijwilliger(${v.vId})" style="font-size:10px;padding:2px 6px;" title="Bewerk persoon">✏️</button>
+              <button class="btn btn-del btn-sm" onclick="removeVrijwWs(${w.id},${v.vId})" style="font-size:10px;padding:2px 6px;" title="Loskoppelen van deze workshop">✕</button>
+            </div>
+          </div>`).join('') : '<div style="font-size:12px;color:#aaa;margin-bottom:6px;">Nog geen vrijwilligers gekoppeld.</div>'}
 
-        <!-- Vrijwilliger toevoegen -->
+        <!-- Vrijwilliger koppelen -->
         <div style="background:#f9f9f9;border-radius:6px;padding:8px;margin-top:8px;">
-          <div style="font-size:10px;font-weight:700;color:#4DA99A;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">+ Vrijwilliger toevoegen</div>
+          <div style="font-size:10px;font-weight:700;color:#4DA99A;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">+ Vrijwilliger koppelen</div>
+          <div class="form-row">
+            <div style="flex:2;"><label>Bestaande vrijwilliger</label>
+              <select id="ws-vw-sel-${w.id}">
+                <option value="">— kies —</option>
+                ${(db.vrijwilligers||[]).filter(p=>!vwKoppel(w.id,p.id)).slice().sort((a,b)=>(a.naam||'').localeCompare(b.naam||'')).map(p=>`<option value="${p.id}">${p.naam}${p.org?' ('+p.org+')':''}</option>`).join('')}
+              </select>
+            </div>
+            <div style="align-self:flex-end;"><button class="btn btn-sm" style="background:#4DA99A;color:#fff;border-color:#4DA99A;" onclick="koppelVrijwWs(${w.id})">+ Koppelen</button></div>
+          </div>
+          <div style="font-size:10px;color:#aaa;margin:8px 0 4px;">…of een nieuwe vrijwilliger aanmaken &amp; koppelen:</div>
           <div class="form-row">
             <div><label>Naam *</label><input id="ws-vw-naam-${w.id}" placeholder="Naam"></div>
             <div><label>Organisatie</label><input id="ws-vw-org-${w.id}" placeholder="SMC / HvdW"></div>
           </div>
-          <div class="form-row">
-            <div><label>Dag 1</label><select id="ws-vw-d1-${w.id}"><option value="">—</option><option value="ja">Ja</option><option value="nee">Nee</option></select></div>
-            <div><label>Dag 2</label><select id="ws-vw-d2-${w.id}"><option value="">—</option><option value="ja">Ja</option><option value="nee">Nee</option></select></div>
-          </div>
-          <button class="btn btn-sm" style="background:#4DA99A;color:#fff;border-color:#4DA99A;" onclick="addVrijwilligerWs(${w.id})">+ Toevoegen</button>
+          <button class="btn btn-sm" onclick="addVrijwilligerWs(${w.id})">+ Nieuw &amp; koppelen</button>
         </div>
 
         <!-- Deelnemer toevoegen -->
@@ -1386,7 +1417,7 @@ function deleteWorkshop(id){
   if(!confirm('Workshop verwijderen?'))return;
   db.workshops=db.workshops.filter(w=>w.id!==id);
   db.deelnemers=db.deelnemers.filter(d=>d.wsId!==id);
-  db.vrijwilligers=db.vrijwilligers.filter(v=>v.wsId!==id);
+  db.wsVrijw=(db.wsVrijw||[]).filter(k=>k.wsId!==id);
   save(); renderWorkshops(); renderOrgs();
 }
 
@@ -1436,30 +1467,35 @@ function renderDeelnemers(){
   </div>`;
 }
 
-// ── VRIJWILLIGERS ──
+// ── VRIJWILLIGERS (personen, globaal) ──
 function addVrijwilliger(){
-  const wsId=parseInt(document.getElementById('sel-ws-vw').value);
   const naam=document.getElementById('vw-naam').value.trim();
-  if(!wsId||!naam){alert('Vul naam in.');return;}
-  db.vrijwilligers.push({id:Date.now(),wsId,naam,org:document.getElementById('vw-org').value.trim(),dag1:document.getElementById('vw-d1').value,dag2:document.getElementById('vw-d2').value,notitie:document.getElementById('vw-notitie').value.trim()});
-  save(); ['vw-naam','vw-org','vw-notitie'].forEach(id=>document.getElementById(id).value=''); document.getElementById('vw-d1').value=''; document.getElementById('vw-d2').value=''; renderVrijwilligers(); renderOrgs();
+  if(!naam){alert('Vul naam in.');return;}
+  if((db.vrijwilligers||[]).find(x=>(x.naam||'').trim().toLowerCase()===naam.toLowerCase())){alert('Er bestaat al een vrijwilliger met deze naam.');return;}
+  const rolEl=document.getElementById('vw-rol');
+  db.vrijwilligers.push({id:Date.now(),naam,rol:rolEl?rolEl.value.trim():'',org:document.getElementById('vw-org').value.trim(),notitie:document.getElementById('vw-notitie').value.trim()});
+  save(); ['vw-naam','vw-org','vw-notitie','vw-rol'].forEach(id=>{const e=document.getElementById(id); if(e)e.value='';}); renderVrijwilligers(); renderOrgs();
 }
-function deleteVw(id){db.vrijwilligers=db.vrijwilligers.filter(x=>x.id!==id);save();renderVrijwilligers();renderOrgs();}
+function deleteVw(id){
+  if(!confirm('Vrijwilliger verwijderen? Dit verwijdert de persoon én alle koppelingen met workshops.'))return;
+  db.vrijwilligers=db.vrijwilligers.filter(x=>x.id!==id);
+  db.wsVrijw=(db.wsVrijw||[]).filter(k=>k.vId!==id);
+  save();renderVrijwilligers();renderOrgs();renderWorkshops();
+}
 function renderVrijwilligers(){
-  const wsId=parseInt(document.getElementById('sel-ws-vw').value);
-  const addEl=document.getElementById('vw-add'); if(addEl) addEl.style.display=wsId?'block':'none';
-  const el=document.getElementById('vw-list'); if(!wsId){el.innerHTML='';return;}
-  const list=db.vrijwilligers.filter(v=>v.wsId===wsId);
+  const addEl=document.getElementById('vw-add'); if(addEl) addEl.style.display='block';
+  const el=document.getElementById('vw-list'); if(!el) return;
   const isVW=currentRol==='vrijwilliger';
+  const list=(db.vrijwilligers||[]).slice().sort((a,b)=>(a.naam||'').localeCompare(b.naam||''));
   if(!list.length){el.innerHTML='<div class="lege">Nog geen vrijwilligers.</div>';return;}
   el.innerHTML=`<div class="card"><div class="card-title">${list.length} vrijwilliger${list.length!==1?'s':''}</div>
-    ${list.map(v=>`<div class="row-item">
-      <div style="flex:1;"><div style="font-weight:500;">${v.naam}</div><div style="font-size:11px;color:#888;">${v.org||''}${v.notitie?' · '+v.notitie:''}</div></div>
-      <span class="badge ${v.dag1==='ja'?'b-groen':v.dag1==='nee'?'b-rood':'b-grijs'}">D1</span>
-      <span class="badge ${v.dag2==='ja'?'b-groen':v.dag2==='nee'?'b-rood':'b-grijs'}">D2</span>
+    ${list.map(v=>{const nWs=(db.wsVrijw||[]).filter(k=>k.vId===v.id).length;
+      return `<div class="row-item">
+      <div style="flex:1;"><div style="font-weight:500;">${v.naam}</div><div style="font-size:11px;color:#888;">${v.rol?v.rol+' · ':''}${v.org||''}${v.notitie?' · '+v.notitie:''}</div></div>
+      <span class="badge ${nWs?'b-groen':'b-grijs'}" title="Aantal gekoppelde workshops">${nWs} ws</span>
       ${!isVW?`<button class="btn btn-sm btn-o" onclick="editVrijwilliger(${v.id})" style="font-size:11px;">✏️</button>
       <button class="btn btn-del btn-sm" onclick="deleteVw(${v.id})">🗑</button>`:''}
-    </div>`).join('')}
+    </div>`;}).join('')}
   </div>`;
 }
 
@@ -1544,7 +1580,7 @@ function printWorkshoprapport(){
   const wsId=parseInt(document.getElementById('sel-ws-f').value); if(!wsId){alert('Selecteer een workshop.');return;}
   const ws=db.workshops.find(w=>w.id===wsId); if(!ws){alert('Workshop niet gevonden.');return;}
   const D=db.deelnemers.filter(d=>d.wsId===wsId);
-  const VW=db.vrijwilligers.filter(v=>v.wsId===wsId);
+  const VW=vwForWs(wsId);
   const fmtL=d=>d?new Date(d+'T12:00:00').toLocaleDateString('nl-NL',{weekday:'long',day:'numeric',month:'long',year:'numeric'}):'—';
   const tijd=ws.tijd?ws.tijd.replace(/\s*-\s*/,' – ')+' uur':'10.00 – 12.00 uur';
   const tot=D.length;
@@ -1564,7 +1600,7 @@ function printWorkshoprapport(){
   const lfRows=lf.map(x=>`<div class="brow"${x[1]===0?' style="opacity:.4;"':''}><div class="blab">${x[0]}</div><div class="btrack"><div class="bfill o" style="width:${Math.round(x[1]/mL*100)}%;"></div></div><div class="bval">${x[1]}</div></div>`).join('');
   const mA=Math.max(1,...app.map(x=>x[1]));
   const appRows=app.map(x=>`<div class="brow"${x[1]===0?' style="opacity:.4;"':''}><div class="blab">${x[0]}</div><div class="btrack"><div class="bfill t" style="width:${Math.round(x[1]/mA*100)}%;"></div></div><div class="bval">${x[1]}</div></div>`).join('');
-  const beg=[['Ingrid Hoogstraten','Projectleider · Stichting Mens Centraal','ja','ja'],['Rob Bezemer','Projectleider · Rob Bezemer Photography','ja','ja']].concat(VW.map(v=>[v.naam,'Vrijwilliger · '+(v.org||''),v.dag1||'',v.dag2||'']));
+  const beg=[['Ingrid Hoogstraten','Projectleider · Stichting Mens Centraal','ja','ja'],['Rob Bezemer','Projectleider · Rob Bezemer Photography','ja','ja']].concat(VW.map(v=>[v.naam,(v.rol&&v.rol.trim()?v.rol:'Vrijwilliger')+(v.org?' · '+v.org:''),v.dag1||'',v.dag2||'']));
   const begRows=beg.map(b=>`<tr><td class="bnaam">${b[0]}</td><td class="brol">${b[1]}</td><td class="c">${vk(b[2])}</td><td class="c">${vk(b[3])}</td></tr>`).join('');
   const tblRow=d=>`<tr><td>${d.naam||''}</td><td>${d.adres||''}</td><td>${[d.postcode,d.woonplaats].filter(Boolean).join(' ')}</td><td>${d.tel||''}</td><td class="mail">${d.email||''}</td><td class="c">${d.leeftijd||''}</td><td>${d.apparaat||''}</td><td class="c">${vk(d.les1)}</td><td class="c">${vk(d.les2)}</td></tr>`;
 
@@ -1684,7 +1720,7 @@ function renderEvaluatie(){
   const iph=db.deelnemers.filter(d=>d.apparaat==='iPhone').length;
   const and=db.deelnemers.filter(d=>d.apparaat==='Android').length;
   const cert=db.deelnemers.filter(d=>d.les1==='ja'||d.les2==='ja').length;
-  const vwUniek=[...new Set(db.vrijwilligers.map(v=>v.naam))];
+  const vwUniek=[...new Set((db.wsVrijw||[]).map(k=>k.vId))];
   const evWss=db.workshops.filter(w=>(db.evaluaties||[]).some(e=>e.wsId===w.id&&e.type==='d'));
   let nForm=0,cijAll=[],aPos=0,aTot=0,mJa=0,mTot=0;
   evWss.forEach(w=>{const A=evalAggr(w.id);nForm+=A.n;cijAll=cijAll.concat(A.cijfers);aPos+=A.aanbPos;aTot+=A.aanbTot;mJa+=A.meer['Ja'];mTot+=A.meerTot;});
@@ -1743,7 +1779,7 @@ function genRapport(){
   const iph=db.deelnemers.filter(d=>d.apparaat==='iPhone').length;
   const and=db.deelnemers.filter(d=>d.apparaat==='Android').length;
   const cert=db.deelnemers.filter(d=>d.les1==='ja'||d.les2==='ja').length;
-  const vwUniek=[...new Set(db.vrijwilligers.map(v=>v.naam))];
+  const vwUniek=[...new Set((db.wsVrijw||[]).map(k=>k.vId))];
   const wijken=[...new Set(db.workshops.map(w=>w.wijk).filter(Boolean))].join(', ');
   const evWss=db.workshops.filter(w=>(db.evaluaties||[]).some(e=>e.wsId===w.id&&e.type==='d'));
   let nForm=0,cijAll=[],aPos=0,aTot=0,mJa=0,mTot=0,quotes=[];
