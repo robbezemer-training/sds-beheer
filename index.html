@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Samen Digitaal Sterk — Beheer v8y</title>
+<title>Samen Digitaal Sterk — Beheer v8z</title>
 <style>
 @font-face {
   font-family: 'Bebas Neue';
@@ -151,7 +151,7 @@ input[readonly]{background:#f9f9f9;color:#888;}
   <div class="topbar-logo">📋</div>
   <div>
     <div style="font-size:15px;font-weight:600;">Samen Digitaal Sterk</div>
-    <div style="font-size:11px;color:#aaa;">Beheer · v8y · Rotterdam 2026</div>
+    <div style="font-size:11px;color:#aaa;">Beheer · v8z · Rotterdam 2026</div>
   </div>
   <div style="margin-left:auto;display:flex;align-items:center;gap:12px;">
     <span id="rol-badge" style="display:none;font-size:11px;color:#aaa;"></span>
@@ -317,6 +317,7 @@ input[readonly]{background:#f9f9f9;color:#888;}
       <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px;padding-top:10px;border-top:1px solid #eee;">
         <button class="btn" onclick="exportData()">💾 Exporteren (JSON)</button>
         <button class="btn" onclick="importDataPrompt()">📂 Importeren (JSON)</button>
+        <button class="btn btn-o" onclick="importExcelPrompt()">📊 Importeren (Excel planning)</button>
       </div>
     </div>
     <div class="card">
@@ -507,6 +508,199 @@ function importDataPrompt(){
   }; inp.click();
 }
 function resetData(){ if(!confirm('ALLES WISSEN?'))return; if(!confirm('Zeker?'))return; db={organisaties:[],workshops:[],deelnemers:[],vrijwilligers:[]}; save(); render(); }
+
+// ── EXCEL PLANNING IMPORT ──
+function importExcelPrompt(){
+  const inp=document.createElement('input'); inp.type='file'; inp.accept='.xlsx';
+  inp.onchange=e=>{ const f=e.target.files[0]; if(!f)return; excelImport(f); };
+  inp.click();
+}
+
+function excelImport(file){
+  // Laad SheetJS dynamisch als nog niet aanwezig
+  if(window.XLSX){ _doExcelImport(file); return; }
+  const s=document.createElement('script');
+  s.src='https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+  s.onload=()=>_doExcelImport(file);
+  s.onerror=()=>alert('Kon SheetJS niet laden. Controleer je internetverbinding.');
+  document.head.appendChild(s);
+}
+
+function _doExcelImport(file){
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    try{
+      const wb=XLSX.read(ev.target.result,{type:'array',cellDates:true});
+      const ws=wb.Sheets['Bevestigd'];
+      if(!ws){alert('Tabblad "Bevestigd" niet gevonden in dit Excel-bestand.');return;}
+      const rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:null});
+
+      // Datums parsen: "10 en 17 juni" → ["2026-06-10","2026-06-17"]
+      const MAANDEN={januari:1,februari:2,maart:3,april:4,mei:5,juni:6,juli:7,augustus:8,september:9,oktober:10,november:11,december:12};
+      function parseData(str){
+        if(!str)return[null,null];
+        // Normaliseer: "verzet naar X" → strip alles na "verzet"
+        const schoon=String(str).replace(/verzet naar .*/i,'').replace(/[()!]/g,'').trim();
+        // Zoek alle dag-maand combinaties, bv "10 juni", "17 juni", "maandag 22", "dinsdag 30 juni"
+        const re=/(\d{1,2})\s+(januari|februari|maart|april|mei|juni|juli|augustus|september|oktober|november|december)/gi;
+        const gevonden=[]; let m;
+        while((m=re.exec(schoon))!==null){
+          const dag=parseInt(m[1]), mnd=MAANDEN[m[2].toLowerCase()];
+          if(dag&&mnd) gevonden.push([dag,mnd]);
+        }
+        // Als maar 1 maand gevonden, zoek ook losse getallen vóór/na "en"
+        if(gevonden.length===1){
+          const enkeleRe=/(\d{1,2})\s+en\s+(\d{1,2})\s+(januari|februari|maart|april|mei|juni|juli|augustus|september|oktober|november|december)/i;
+          const em=enkeleRe.exec(schoon);
+          if(em){
+            const mnd2=MAANDEN[em[3].toLowerCase()];
+            gevonden.unshift([parseInt(em[1]),mnd2]);
+          }
+        }
+        // "verzet naar 16 juli" → pak de datum na "verzet naar"
+        const verzet=String(str).match(/verzet naar\s+(\d{1,2})\s+(januari|februari|maart|april|mei|juni|juli|augustus|september|oktober|november|december)/i);
+        if(verzet){
+          const dag=parseInt(verzet[1]), mnd=MAANDEN[verzet[2].toLowerCase()];
+          if(gevonden.length>=1) gevonden[1]=[dag,mnd];
+          else gevonden.push([dag,mnd]);
+        }
+        function iso(dag,mnd){ return '2026-'+String(mnd).padStart(2,'0')+'-'+String(dag).padStart(2,'0'); }
+        if(gevonden.length>=2) return[iso(...gevonden[0]),iso(...gevonden[1])];
+        if(gevonden.length===1) return[iso(...gevonden[0]),null];
+        return[null,null];
+      }
+
+      // Vrijwilligers parsen: "Kathy (10/6) en Shadya (beide)" → [{naam:"Kathy",d1:"10/6"},{naam:"Shadya"}]
+      function parseVrijw(str){
+        if(!str)return[];
+        const resultaat=[];
+        // Split op "en" buiten haakjes
+        const delen=String(str).split(/\s+en\s+/i);
+        for(const deel of delen){
+          // naam = eerste woord(en) vóór haakje of einde
+          const naamMatch=deel.match(/^([A-Za-zÀ-ÿ\s]+?)(?:\s*\(|$)/);
+          if(!naamMatch)continue;
+          const naam=naamMatch[1].trim();
+          if(!naam)continue;
+          const notitieMatch=deel.match(/\(([^)]+)\)/);
+          const notitie=notitieMatch?notitieMatch[1].trim():'';
+          // dag1/dag2 afleiden uit notitie
+          // "beide" → d1=ja, d2=ja
+          // "10/6" → d1=ja (eerste dagdeel), d2=nee
+          // "7/7" → d1=nee, d2=ja (tweede dagdeel)
+          // "niet" / "geen" → d1=nee, d2=nee
+          // leeg → onbekend, sla op als ''
+          let dag1='',dag2='';
+          if(/beide/i.test(notitie)){ dag1='ja'; dag2='ja'; }
+          else if(/niet|geen/i.test(notitie)){ dag1='nee'; dag2='nee'; }
+          resultaat.push({naam,notitie,dag1,dag2});
+        }
+        return resultaat;
+      }
+
+      // Organisatienaam matchen op bestaande org (case-insensitive, partieel)
+      function vindOrg(naam){
+        const n=naam.trim().toLowerCase();
+        return db.organisaties.find(o=>{
+          const on=(o.naam||'').toLowerCase();
+          return on===n || on.includes(n) || n.includes(on);
+        });
+      }
+
+      // Verwerk rijen 2 t/m 10 (0-indexed: 1..9), sla rij 10 "Pernis avond" over
+      const resultaten={nieuwOrg:0,nieuwWs:0,bestaandWs:0,vrijwOk:0,skip:[]};
+
+      for(let i=1;i<=9;i++){
+        const r=rows[i];
+        if(!r||!r[0]||typeof r[0]!=='number')continue;
+        const orgNaam=r[1]?String(r[1]).trim():'';
+        const dataStr=r[3]?String(r[3]).trim():'';
+        const tijdStr=r[4]?String(r[4]).trim():'';
+        const locStr=r[5]?String(r[5]).trim():'';
+        const contactNaam=r[7]?String(r[7]).trim():'';
+        const contactEmail=r[8]?String(r[8]).trim():'';
+        const contactTel=r[9]?String(r[9]).trim():'';
+        const vrijwStr=r[10]?String(r[10]).trim():'';
+        const bijzStr=r[11]?String(r[11]).trim():'';
+
+        if(!orgNaam||!dataStr){ resultaten.skip.push(r[0]+' (geen org/data)'); continue; }
+
+        const [dag1,dag2]=parseData(dataStr);
+        if(!dag1){ resultaten.skip.push(orgNaam+' (datum niet te parsen: '+dataStr+')'); continue; }
+
+        // Zoek of maak organisatie
+        let org=vindOrg(orgNaam);
+        if(!org){
+          org={id:Date.now()+i*7, naam:orgNaam, wijk:'', adres:locStr,
+            contacts:contactNaam?[{naam:contactNaam,email:contactEmail,tel:contactTel}]:[],
+            status:'bevestigd', flyer:false, contactDatum:'', contactWijze:'', reactieDatum:'', reactie:'', notities:''};
+          db.organisaties.push(org);
+          resultaten.nieuwOrg++;
+        } else {
+          // Update status naar bevestigd en voeg contact toe als nog niet bekend
+          if(org.status!=='bevestigd') org.status='bevestigd';
+          if(contactNaam && !(org.contacts||[]).find(c=>(c.naam||'').toLowerCase()===contactNaam.toLowerCase())){
+            if(!org.contacts) org.contacts=[];
+            org.contacts.push({naam:contactNaam,email:contactEmail,tel:contactTel});
+          }
+        }
+
+        // Check of workshop al bestaat (zelfde orgId + dag1, of dag1 overlapt met bestaande dag2)
+        const bestaand=db.workshops.find(w=>w.orgId===org.id && (w.dag1===dag1 || w.dag2===dag1 || (dag2 && w.dag1===dag2) || w.dag2===dag2));
+        let wsId;
+        if(bestaand){
+          // Update dag2 / tijd / bijzonderheden als gewijzigd
+          if(dag2&&bestaand.dag2!==dag2) bestaand.dag2=dag2;
+          if(tijdStr) bestaand.tijd=tijdStr;
+          if(bijzStr) bestaand.bijz=bijzStr;
+          wsId=bestaand.id;
+          resultaten.bestaandWs++;
+        } else {
+          wsId=Date.now()+i*13;
+          db.workshops.push({id:wsId, orgId:org.id, org:org.naam, wijk:org.wijk||'',
+            dag1, dag2:dag2||'', tijd:tijdStr, adres:locStr,
+            contact:contactNaam, cemail:contactEmail, bijz:bijzStr});
+          resultaten.nieuwWs++;
+        }
+
+        // Vrijwilligers verwerken
+        const vrijwLijst=parseVrijw(vrijwStr);
+        for(const vw of vrijwLijst){
+          if(!vw.naam)continue;
+          // Zoek persoonsrecord: eerst exacte match, dan match op voornaam (eerste woord)
+          const zoekNaam=vw.naam.toLowerCase();
+          let persoon=(db.vrijwilligers||[]).find(p=>(p.naam||'').trim().toLowerCase()===zoekNaam)
+            || (db.vrijwilligers||[]).find(p=>(p.naam||'').trim().toLowerCase().split(/\s+/)[0]===zoekNaam.split(/\s+/)[0]);
+          if(!persoon){
+            persoon={id:Date.now()+Math.floor(Math.random()*1e5), naam:vw.naam, rol:'', org:'', notitie:''};
+            if(!db.vrijwilligers) db.vrijwilligers=[];
+            db.vrijwilligers.push(persoon);
+          }
+          // Koppeling: sla over als al bestaat voor dit wsId
+          if(!db.wsVrijw) db.wsVrijw=[];
+          const bestaandKoppel=db.wsVrijw.find(k=>k.wsId===wsId&&k.vId===persoon.id);
+          if(!bestaandKoppel){
+            db.wsVrijw.push({wsId, vId:persoon.id, dag1:vw.dag1, dag2:vw.dag2});
+            resultaten.vrijwOk++;
+          }
+        }
+      }
+
+      save(); render();
+
+      // Rapportage
+      let msg=`✅ Excel-import voltooid\n\n`;
+      msg+=`• ${resultaten.nieuwWs} nieuwe workshop(s) aangemaakt\n`;
+      msg+=`• ${resultaten.bestaandWs} bestaande workshop(s) bijgewerkt\n`;
+      msg+=`• ${resultaten.nieuwOrg} nieuwe organisatie(s) aangemaakt\n`;
+      msg+=`• ${resultaten.vrijwOk} vrijwilligerkoppelingen toegevoegd\n`;
+      if(resultaten.skip.length) msg+=`\n⚠️ Overgeslagen:\n`+resultaten.skip.map(s=>'  • '+s).join('\n');
+      alert(msg);
+
+    }catch(err){ alert('Fout bij verwerken Excel:\n'+err.message); console.error(err); }
+  };
+  reader.readAsArrayBuffer(file);
+}
 
 // ── DATUM ──
 function fmtDate(d){ if(!d)return''; return new Date(d+'T12:00:00').toLocaleDateString('nl-NL',{day:'numeric',month:'long',year:'numeric'}); }
