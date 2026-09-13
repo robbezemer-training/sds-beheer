@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Samen Digitaal Sterk — Beheer v8aa</title>
+<title>Samen Digitaal Sterk — Beheer v8ab</title>
 <style>
 @font-face {
   font-family: 'Bebas Neue';
@@ -151,7 +151,7 @@ input[readonly]{background:#f9f9f9;color:#888;}
   <div class="topbar-logo">📋</div>
   <div>
     <div style="font-size:15px;font-weight:600;">Samen Digitaal Sterk</div>
-    <div style="font-size:11px;color:#aaa;">Beheer · v8aa · Rotterdam 2026</div>
+    <div style="font-size:11px;color:#aaa;">Beheer · v8ab · Rotterdam 2026</div>
   </div>
   <div style="margin-left:auto;display:flex;align-items:center;gap:12px;">
     <span id="rol-badge" style="display:none;font-size:11px;color:#aaa;"></span>
@@ -218,8 +218,8 @@ input[readonly]{background:#f9f9f9;color:#888;}
         <div><label>Achternaam *</label><input id="d-anaam" placeholder="Achternaam"></div>
       </div>
       <div class="form-row">
-        <div><label>Adres</label><input id="d-adres" placeholder="Straat en huisnummer"></div>
         <div><label>Postcode</label><input id="d-postcode" placeholder="1234 AB"></div>
+        <div><label>Huisnummer</label><input id="d-huisnr" placeholder="12"></div>
         <div><label>Woonplaats</label><input id="d-woonplaats" placeholder="Rotterdam"></div>
       </div>
       <div class="form-row four">
@@ -1152,8 +1152,8 @@ function editDeelnemer(id) {
       <div><label>Naam *</label><input id="e-naam" value="${d.naam||''}"></div>
     </div>
     <div class="form-row">
-      <div><label>Adres</label><input id="e-adres2" value="${d.adres||''}" placeholder="Straat en huisnummer"></div>
       <div><label>Postcode</label><input id="e-postcode" value="${d.postcode||''}" placeholder="1234 AB"></div>
+      <div><label>Huisnummer</label><input id="e-huisnr" value="${d.huisnummer||''}" placeholder="12"></div>
       <div><label>Woonplaats</label><input id="e-woonplaats" value="${d.woonplaats||''}" placeholder="Rotterdam"></div>
     </div>
     <div class="form-row four">
@@ -1175,7 +1175,7 @@ function editDeelnemer(id) {
 function slaDeelnemerOp() {
   const d = db.deelnemers.find(x => x.id === modalId); if (!d) return;
   d.naam = document.getElementById('e-naam').value.trim() || d.naam;
-  d.adres = document.getElementById('e-adres2').value.trim();
+  d.huisnummer = document.getElementById('e-huisnr').value.trim();
   d.postcode = document.getElementById('e-postcode').value.trim();
   d.woonplaats = document.getElementById('e-woonplaats').value.trim();
   d.leeftijd = document.getElementById('e-leeft').value;
@@ -1218,7 +1218,7 @@ function addDeelnemerWs(wsId) {
   db.deelnemers.push({
     id: Date.now(), wsId,
     naam: vn+' '+an,
-    adres: (document.getElementById('ws-d-adres-'+wsId)||{}).value||'',
+    huisnummer: (document.getElementById('ws-d-huisnr-'+wsId)||{}).value||'',
     postcode: (document.getElementById('ws-d-pc-'+wsId)||{}).value||'',
     woonplaats: (document.getElementById('ws-d-wp-'+wsId)||{}).value||'',
     leeftijd: document.getElementById('ws-d-leeft-'+wsId).value,
@@ -1228,7 +1228,7 @@ function addDeelnemerWs(wsId) {
     les1: '', les2: '', opmerking: ''
   });
   save();
-  ['ws-d-vn-','ws-d-an-','ws-d-adres-','ws-d-pc-','ws-d-wp-','ws-d-leeft-','ws-d-tel-','ws-d-email-'].forEach(p => {
+  ['ws-d-vn-','ws-d-an-','ws-d-huisnr-','ws-d-pc-','ws-d-wp-','ws-d-leeft-','ws-d-tel-','ws-d-email-'].forEach(p => {
     const el = document.getElementById(p+wsId); if(el) el.value='';
   });
   renderWorkshops(); renderOrgs(); renderDeelnemers();
@@ -1515,8 +1515,8 @@ function renderWorkshops(preOrgId) {
             <div><label>Achternaam *</label><input id="ws-d-an-${w.id}" placeholder="Achternaam"></div>
           </div>
           <div class="form-row">
-            <div><label>Adres</label><input id="ws-d-adres-${w.id}" placeholder="Straat en huisnummer"></div>
             <div><label>Postcode</label><input id="ws-d-pc-${w.id}" placeholder="1234 AB"></div>
+            <div><label>Huisnummer</label><input id="ws-d-huisnr-${w.id}" placeholder="12"></div>
             <div><label>Woonplaats</label><input id="ws-d-wp-${w.id}" placeholder="Rotterdam"></div>
           </div>
           <div class="form-row">
@@ -1630,8 +1630,8 @@ function addDeelnemer(){
   const wsId=parseInt(document.getElementById('sel-ws-d').value);
   const vn=document.getElementById('d-vnaam').value.trim(), an=document.getElementById('d-anaam').value.trim();
   if(!wsId||!vn||!an){alert('Vul naam in.');return;}
-  db.deelnemers.push({id:Date.now(),wsId,naam:vn+' '+an,adres:document.getElementById('d-adres').value.trim(),postcode:document.getElementById('d-postcode').value.trim(),woonplaats:document.getElementById('d-woonplaats').value.trim(),leeftijd:document.getElementById('d-leeft').value,apparaat:document.getElementById('d-app').value,tel:document.getElementById('d-tel').value,email:document.getElementById('d-email').value,les1:'',les2:'',opmerking:''});
-  save(); ['d-vnaam','d-anaam','d-adres','d-postcode','d-woonplaats','d-leeft','d-tel','d-email'].forEach(id=>document.getElementById(id).value=''); renderDeelnemers(); renderOrgs();
+  db.deelnemers.push({id:Date.now(),wsId,naam:vn+' '+an,huisnummer:document.getElementById('d-huisnr').value.trim(),postcode:document.getElementById('d-postcode').value.trim(),woonplaats:document.getElementById('d-woonplaats').value.trim(),leeftijd:document.getElementById('d-leeft').value,apparaat:document.getElementById('d-app').value,tel:document.getElementById('d-tel').value,email:document.getElementById('d-email').value,les1:'',les2:'',opmerking:''});
+  save(); ['d-vnaam','d-anaam','d-huisnr','d-postcode','d-woonplaats','d-leeft','d-tel','d-email'].forEach(id=>document.getElementById(id).value=''); renderDeelnemers(); renderOrgs();
 }
 function setAanw(id,les,val){const d=db.deelnemers.find(x=>x.id===id);if(d){d[les]=d[les]===val?'':val;save();renderDeelnemers();renderOrgs();}}
 function setEval(id,val){const d=db.deelnemers.find(x=>x.id===id);if(d){d.opmerking=val;save();}}
@@ -1797,7 +1797,7 @@ function printWorkshoprapport(){
   const appRows=app.map(x=>`<div class="brow"${x[1]===0?' style="opacity:.4;"':''}><div class="blab">${x[0]}</div><div class="btrack"><div class="bfill t" style="width:${Math.round(x[1]/mA*100)}%;"></div></div><div class="bval">${x[1]}</div></div>`).join('');
   const beg=[['Ingrid Hoogstraten','Projectleider · Stichting Mens Centraal','ja','ja'],['Rob Bezemer','Projectleider · Rob Bezemer Photography','ja','ja']].concat(VW.map(v=>[v.naam,(v.rol&&v.rol.trim()?v.rol:'Vrijwilliger')+(v.org?' · '+v.org:''),v.dag1||'',v.dag2||'']));
   const begRows=beg.map(b=>`<tr><td class="bnaam">${b[0]}</td><td class="brol">${b[1]}</td><td class="c">${vk(b[2])}</td><td class="c">${vk(b[3])}</td></tr>`).join('');
-  const tblRow=d=>`<tr><td>${d.naam||''}</td><td>${d.adres||''}</td><td>${[d.postcode,d.woonplaats].filter(Boolean).join(' ')}</td><td>${d.tel||''}</td><td class="mail">${d.email||''}</td><td class="c">${d.leeftijd||''}</td><td>${d.apparaat||''}</td><td class="c">${vk(d.les1)}</td><td class="c">${vk(d.les2)}</td></tr>`;
+  const tblRow=d=>`<tr><td>${d.naam||''}</td><td>${d.huisnummer||''}</td><td>${[d.postcode,d.woonplaats].filter(Boolean).join(' ')}</td><td>${d.tel||''}</td><td class="mail">${d.email||''}</td><td class="c">${d.leeftijd||''}</td><td>${d.apparaat||''}</td><td class="c">${vk(d.les1)}</td><td class="c">${vk(d.les2)}</td></tr>`;
 
   const CSS=`
   @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@700&family=Source+Sans+3:wght@300;400;600;700&display=swap');
@@ -1890,7 +1890,7 @@ function printWorkshoprapport(){
   const perPag=Math.ceil(D.length/nPag);
   const chunks=[]; for(let i=0;i<D.length;i+=perPag) chunks.push(D.slice(i,i+perPag));
   if(!chunks.length) chunks.push([]);
-  const deelKop=`<thead><tr><th>Naam</th><th>Adres</th><th>Postcode / plaats</th><th>Telefoon</th><th>E-mail</th><th class="c">Lft</th><th>Toestel</th><th class="c">D1</th><th class="c">D2</th></tr></thead>`;
+  const deelKop=`<thead><tr><th>Naam</th><th>Huisnr</th><th>Postcode / plaats</th><th>Telefoon</th><th>E-mail</th><th class="c">Lft</th><th>Toestel</th><th class="c">D1</th><th class="c">D2</th></tr></thead>`;
   const landPages=chunks.map((chunk,idx)=>{
     const sub=chunks.length>1?` &nbsp;·&nbsp; deel ${idx+1}/${chunks.length}`:'';
     return `<div class="page land">${HEAD(' compact')}<div class="body">${TB('Deelnemers')}
