@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Samen Digitaal Sterk — Beheer v8ab</title>
+<title>Samen Digitaal Sterk — Beheer v8ac</title>
 <style>
 @font-face {
   font-family: 'Bebas Neue';
@@ -151,7 +151,7 @@ input[readonly]{background:#f9f9f9;color:#888;}
   <div class="topbar-logo">📋</div>
   <div>
     <div style="font-size:15px;font-weight:600;">Samen Digitaal Sterk</div>
-    <div style="font-size:11px;color:#aaa;">Beheer · v8ab · Rotterdam 2026</div>
+    <div style="font-size:11px;color:#aaa;">Beheer · v8ac · Rotterdam 2026</div>
   </div>
   <div style="margin-left:auto;display:flex;align-items:center;gap:12px;">
     <span id="rol-badge" style="display:none;font-size:11px;color:#aaa;"></span>
@@ -368,6 +368,17 @@ function ensureSchema(){
       db.wsVrijw=[];
       db.vrijwilligers=db.vrijwilligers.map(v=>({id:v.id, naam:v.naam, rol:v.rol||'', org:v.org||'', notitie:v.notitie||''}));
     }
+  }
+  // Eenmalige migratie: deelnemer 'adres' (vrije tekst) -> huisnummer
+  if(!db._migDeelnAdres){
+    (db.deelnemers||[]).forEach(d=>{
+      if(d && d.adres && !d.huisnummer){
+        const m = String(d.adres).trim().match(/(\d+)\s*([a-zA-Z]{0,3})\s*$/);
+        if(m) d.huisnummer = (m[1]+(m[2]||'')).trim();
+      }
+      if(d) delete d.adres;
+    });
+    db._migDeelnAdres = true;
   }
 }
 function vwPersoon(vId){ return (db.vrijwilligers||[]).find(p=>p.id===vId); }
