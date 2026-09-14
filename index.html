@@ -2102,7 +2102,7 @@ const FORM_CSS = `
 
   * { margin:0; padding:0; box-sizing:border-box; }
 
-  @page { size:A4 portrait; margin:12mm 10mm 10mm 10mm; }
+  @page { size:A4 portrait; margin:8mm 10mm 8mm 10mm; }
 
   html, body {
     background:white;
@@ -2113,11 +2113,11 @@ const FORM_CSS = `
   /* Blok-flow: inhoud wordt nooit afgeknipt; past op 1 A4 mits compact */
   .page {
     width:190mm;
-    min-height:255mm;
+    min-height:245mm;
     background:white;
     display:block;
     margin: 0 auto;
-    padding-top:4mm;
+    padding-top:2mm;
     page-break-after: always;
   }
   .page:last-child { page-break-after: auto; }
