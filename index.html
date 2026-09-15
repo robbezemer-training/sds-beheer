@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Samen Digitaal Sterk — Beheer v8am</title>
+<title>Samen Digitaal Sterk — Beheer v8ao</title>
 <style>
 @font-face {
   font-family: 'Bebas Neue';
@@ -139,7 +139,7 @@ input[readonly]{background:#f9f9f9;color:#888;}
     <div style="font-size:40px;margin-bottom:8px;">📋</div>
     <div style="font-size:18px;font-weight:700;color:#1C1E20;margin-bottom:4px;">Samen Digitaal Sterk</div>
     <div style="font-size:12px;color:#888;margin-bottom:2px;">Rotterdam 2026</div>
-    <div style="font-size:10px;color:#bbb;margin-bottom:22px;">v8am</div>
+    <div style="font-size:10px;color:#bbb;margin-bottom:22px;">v8ao</div>
     <input type="password" id="login-pin" placeholder="Toegangscode" maxlength="6"
       style="text-align:center;letter-spacing:6px;font-size:20px;width:100%;padding:12px;border:2px solid #ddd;border-radius:10px;outline:none;margin-bottom:12px;"
       onkeydown="if(event.key==='Enter') doLogin()"
@@ -153,7 +153,7 @@ input[readonly]{background:#f9f9f9;color:#888;}
   <div class="topbar-logo">📋</div>
   <div>
     <div style="font-size:15px;font-weight:600;">Samen Digitaal Sterk</div>
-    <div style="font-size:11px;color:#aaa;">Beheer · v8am · Rotterdam 2026</div>
+    <div style="font-size:11px;color:#aaa;">Beheer · v8ao · Rotterdam 2026</div>
   </div>
   <div style="margin-left:auto;display:flex;align-items:center;gap:12px;">
     <span id="rol-badge" style="display:none;font-size:11px;color:#aaa;"></span>
@@ -1175,6 +1175,10 @@ html,body { background:#e9e9e9; font-family:'Source Sans 3',Arial,sans-serif; co
 .pc-table { width:100%; border-collapse:collapse; font-size:9pt; }
 .pc-table td { padding:1.5mm 2mm; border-bottom:1px solid #f0f0f0; }
 .pc-table td:last-child { text-align:right; font-weight:700; }
+.dl-table { width:100%; border-collapse:collapse; font-size:9pt; }
+.dl-table th { text-align:left; font-size:7.5pt; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#999; border-bottom:1.5px solid #1C1E20; padding:1.5mm 2mm; }
+.dl-table td { padding:1.3mm 2mm; border-bottom:1px solid #f0f0f0; }
+.dl-table th:nth-child(4), .dl-table th:nth-child(5), .dl-table td:nth-child(4), .dl-table td:nth-child(5) { text-align:center; width:10mm; }
 `;
 const EVAL_COMPACT=`
 .evx .sec-label{margin-bottom:2mm;}
@@ -1323,6 +1327,18 @@ function evalRapportPage(wsId){
         <div><div class="sec-label" style="font-size:7pt;">Leeftijdsverdeling <span style="text-transform:none;letter-spacing:0;color:#aaa;">(per 5 jaar)</span></div>${demoBarsHtml(lft.rows,'o')}</div>
         <div><div class="sec-label teal" style="font-size:7pt;">Type apparaat</div>${demoBarsHtml(app,'t')}</div>
       </div></div>`;
+  const deelnemerslijstBlok = `<div class="section"><div class="sec-label">Deelnemerslijst</div>
+    ${D.length ? `<table class="dl-table">
+      <thead><tr><th>Naam</th><th>Leeftijd</th><th>Apparaat</th><th>D1</th><th>D2</th></tr></thead>
+      <tbody>${D.slice().sort((a,b)=>(a.naam||'').localeCompare(b.naam||'','nl')).map(d=>`<tr>
+        <td>${d.naam||'—'}</td>
+        <td>${d.leeftijd||'—'}</td>
+        <td>${d.apparaat||'onbekend'}</td>
+        <td>${d.les1==='ja'?'✓':'—'}</td>
+        <td>${d.les2==='ja'?'✓':'—'}</td>
+      </tr>`).join('')}</tbody>
+    </table>` : '<div style="font-size:10pt;color:#aaa;">Nog geen deelnemers geregistreerd.</div>'}
+  </div>`;
   const effectBlok = A.n>0 ? `<div class="section"><div class="sec-label teal">Effect — voelt zich zekerder online</div>
       <div style="font-size:10.5pt;margin-bottom:2mm;"><b style="font-size:14pt;color:#4DA99A;">${pctZekerder}%</b> van de deelnemers voelt zich na de workshop (veel of iets) zekerder online.</div>
       ${evalBars(A.vertrouwen,['Veel zekerder','Iets zekerder','Ongeveer hetzelfde'],'t')}</div>
@@ -1336,6 +1352,7 @@ function evalRapportPage(wsId){
     <div class="ws-sub">${orgTekst} · ${fmtDate(w.dag1)} &amp; ${fmtDate(w.dag2)}${geenEval?` <span class="tag-nvt">${w.evalNvtReden?'dagbesteding':'geen deelnemerevaluatie'}</span>`:''}</div>
     ${deelnemersBlok}
     ${bereikBlok}
+    ${deelnemerslijstBlok}
     ${effectBlok}
     <div class="section"><div class="sec-label teal">Organisatie-evaluatie</div>${orgBlok}</div>
     </div><div class="footer"><div class="footer-txt">Samen Digitaal Sterk · Rotterdam 2026</div><div class="footer-txt">Evaluatierapport · ${orgTekst}</div></div><div class="bar" style="margin-top:2mm;"></div></div>`;
@@ -1385,7 +1402,8 @@ function gemeenteStats(){
   const pctD1MetBeide=dag1Totaal?Math.round(beid/dag1Totaal*100):0;
   const pctD2MetBeide=dag2Totaal?Math.round(beid/dag2Totaal*100):0;
   const lft=leeftijdBuckets(db.deelnemers), app=apparaatBuckets(db.deelnemers);
-  return {alleWs,N,cijAll,gem,pctZekerder,orgIngevuld,orgGoedTel,pctOrgGoed,eigenIngevuld,eigenGoedTel,pctEigenGoed,cijWsAantal,missendeWs,missendeDagbesteding,missendeOverig,missendeDelen,totWs,totD,beid,alleenD1,alleenD2,bereikt,pctBeid,pctD1,pctD2,dag1Totaal,dag2Totaal,pctD1MetBeide,pctD2MetBeide,lft,app,alleQuotes};
+  const vrijwilligers=[...new Set((db.wsVrijw||[]).map(k=>k.vId))].length;
+  return {alleWs,N,cijAll,gem,pctZekerder,orgIngevuld,orgGoedTel,pctOrgGoed,eigenIngevuld,eigenGoedTel,pctEigenGoed,cijWsAantal,missendeWs,missendeDagbesteding,missendeOverig,missendeDelen,totWs,totD,beid,alleenD1,alleenD2,bereikt,pctBeid,pctD1,pctD2,dag1Totaal,dag2Totaal,pctD1MetBeide,pctD2MetBeide,lft,app,alleQuotes,vrijwilligers};
 }
 function printGemeenteEvaluatie(){
   const S=gemeenteStats();
@@ -1417,6 +1435,7 @@ function printGemeenteEvaluatie(){
         <div class="stat stat-o"><div class="stat-n">${S.bereikt}</div><div class="stat-l">Totaal deelnemers (bereikt)</div></div>
         <div class="stat stat-t"><div class="stat-n">${S.dag1Totaal}</div><div class="stat-l">Deelnemers dag 1</div><div style="font-size:7.5pt;color:#999;margin-top:1mm;">waarvan ${S.beid} ook dag 2 (${S.pctD1MetBeide}%)</div></div>
         <div class="stat stat-t"><div class="stat-n">${S.dag2Totaal}</div><div class="stat-l">Deelnemers dag 2</div><div style="font-size:7.5pt;color:#999;margin-top:1mm;">waarvan ${S.beid} ook dag 1 (${S.pctD2MetBeide}%)</div></div>
+        <div class="stat stat-o"><div class="stat-n">${S.vrijwilligers}</div><div class="stat-l">Vrijwilligers</div></div>
       </div>
       <div style="font-size:9pt;color:#777;margin-top:2mm;">${S.beid} deelnemers (${S.pctBeid}% van het totaal bereikt) waren aanwezig op beide dagdelen — dat is de gesubsidieerde prestatie-eenheid. ${S.totD>S.bereikt?`(${S.totD-S.bereikt} geregistreerd maar geen van beide dagen aanwezig.)`:''}</div></div>
     <div class="section"><div class="sec-label">Tevredenheid</div>
@@ -2208,8 +2227,6 @@ function printWorkshoprapport(){
 function renderEvaluatie(){
   const el=document.getElementById('eval-content');
   const S=gemeenteStats();
-  const vwUniek=[...new Set((db.wsVrijw||[]).map(k=>k.vId))];
-  const cert=db.deelnemers.filter(d=>d.les1==='ja'||d.les2==='ja').length;
   const missendeTekst=S.missendeDelen.length?` (${S.missendeDelen.join(', ')})`:'';
   const appBars=(rows,cls)=>rows.length?rows.map(r=>`<div style="display:flex;align-items:center;gap:8px;margin-bottom:5px;font-size:12px;">
       <div style="width:56px;flex-shrink:0;color:#666;${r.onbekend?'color:#c07c1f;':''}">${r.label}</div>
@@ -2224,6 +2241,7 @@ function renderEvaluatie(){
       <div class="stat"><div class="stat-n">${S.bereikt}</div><div class="stat-l">Totaal deelnemers (bereikt)</div></div>
       <div class="stat"><div class="stat-n">${S.dag1Totaal}</div><div class="stat-l">Deelnemers dag 1<br><span style="font-size:10px;color:#aaa;">waarvan ${S.beid} ook dag 2 (${S.pctD1MetBeide}%)</span></div></div>
       <div class="stat"><div class="stat-n">${S.dag2Totaal}</div><div class="stat-l">Deelnemers dag 2<br><span style="font-size:10px;color:#aaa;">waarvan ${S.beid} ook dag 1 (${S.pctD2MetBeide}%)</span></div></div>
+      <div class="stat"><div class="stat-n">${S.vrijwilligers}</div><div class="stat-l">Vrijwilligers</div></div>
     </div>
     <div style="font-size:12px;color:#888;margin-top:10px;">${S.beid} deelnemers (${S.pctBeid}% van het totaal bereikt) waren aanwezig op beide dagdelen — dat is de gesubsidieerde prestatie-eenheid.</div>
   </div>
@@ -2235,6 +2253,7 @@ function renderEvaluatie(){
       <div class="stat"><div class="stat-n" style="color:#4DA99A;">${S.pctEigenGoed}%</div><div class="stat-l">Eigen: samenwerking<br><span style="font-size:10px;color:#aaa;">goed/zeer goed (${S.eigenIngevuld} ingevuld)</span></div></div>
       <div class="stat"><div class="stat-n" style="color:#4DA99A;">${S.pctZekerder}%</div><div class="stat-l">Zekerder online<br><span style="font-size:10px;color:#aaa;">(${S.N} formulieren)</span></div></div>
     </div>
+    <button class="btn btn-t" onclick="printGemeenteEvaluatie()" style="margin-top:12px;">🏛 Gemeente-evaluatie (print)</button>
   </div>
   <div class="card">
     <div class="card-title">Leeftijdsverdeling <span style="font-weight:400;color:#aaa;font-size:11px;">(per 5 jaar)</span></div>
@@ -2244,14 +2263,6 @@ function renderEvaluatie(){
   <div class="card">
     <div class="card-title">Type apparaat</div>
     ${appBars(S.app,'t')}
-  </div>
-  <div class="card">
-    <div class="card-title">Overig</div>
-    <div class="stat-grid">
-      <div class="stat"><div class="stat-n" style="color:#4DA99A;">${cert}</div><div class="stat-l">Certificaten</div></div>
-      <div class="stat"><div class="stat-n">${vwUniek.length}</div><div class="stat-l">Vrijwilligers</div></div>
-    </div>
-    <button class="btn btn-t" onclick="printGemeenteEvaluatie()" style="margin-top:12px;">🏛 Gemeente-evaluatie (print)</button>
   </div>
   <div class="card">
     <div class="card-title">Per workshop</div>
