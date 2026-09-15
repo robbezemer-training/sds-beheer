@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Samen Digitaal Sterk — Beheer v8al</title>
+<title>Samen Digitaal Sterk — Beheer v8am</title>
 <style>
 @font-face {
   font-family: 'Bebas Neue';
@@ -80,6 +80,7 @@ input[readonly]{background:#f9f9f9;color:#888;}
 .aanw.nee{background:#fce4ec;border-color:#e91e63;color:#880e4f;}
 .pb{height:5px;background:#eee;border-radius:3px;margin:3px 0;overflow:hidden;}
 .pb-o{height:100%;background:#E8943A;border-radius:3px;}
+.pb-t{height:100%;background:#4DA99A;border-radius:3px;}
 .lege{text-align:center;color:#aaa;padding:24px;font-size:13px;}
 .sync-status{display:inline-flex;align-items:center;gap:6px;font-size:12px;padding:5px 11px;border-radius:20px;background:#f0f0f0;color:#666;}
 .sync-status.ok{background:#e8f5e9;color:#2e7d32;}
@@ -138,7 +139,7 @@ input[readonly]{background:#f9f9f9;color:#888;}
     <div style="font-size:40px;margin-bottom:8px;">📋</div>
     <div style="font-size:18px;font-weight:700;color:#1C1E20;margin-bottom:4px;">Samen Digitaal Sterk</div>
     <div style="font-size:12px;color:#888;margin-bottom:2px;">Rotterdam 2026</div>
-    <div style="font-size:10px;color:#bbb;margin-bottom:22px;">v8al</div>
+    <div style="font-size:10px;color:#bbb;margin-bottom:22px;">v8am</div>
     <input type="password" id="login-pin" placeholder="Toegangscode" maxlength="6"
       style="text-align:center;letter-spacing:6px;font-size:20px;width:100%;padding:12px;border:2px solid #ddd;border-radius:10px;outline:none;margin-bottom:12px;"
       onkeydown="if(event.key==='Enter') doLogin()"
@@ -152,7 +153,7 @@ input[readonly]{background:#f9f9f9;color:#888;}
   <div class="topbar-logo">📋</div>
   <div>
     <div style="font-size:15px;font-weight:600;">Samen Digitaal Sterk</div>
-    <div style="font-size:11px;color:#aaa;">Beheer · v8al · Rotterdam 2026</div>
+    <div style="font-size:11px;color:#aaa;">Beheer · v8am · Rotterdam 2026</div>
   </div>
   <div style="margin-left:auto;display:flex;align-items:center;gap:12px;">
     <span id="rol-badge" style="display:none;font-size:11px;color:#aaa;"></span>
@@ -1351,16 +1352,46 @@ function srcBlokHtml(lab,rec){
   const pills=stuk('Samenwerking',rec.samenwerking)+stuk('Aansluiting',rec.aansluiting);
   return `<div class="src-block"><div class="src-lab">${lab}</div><div class="pill-row">${pills||'<span class="pill pill-nvt">–</span>'}</div></div>`;
 }
-function printGemeenteEvaluatie(){
+// ── GEMEENTE-STATISTIEKEN (gedeeld tussen schermweergave en print, zodat ze nooit uit elkaar lopen) ──
+function gemeenteStats(){
   ensureSchema();
   const alleWs=[...db.workshops].sort((a,b)=>a.dag1>b.dag1?1:-1);
-  let N=0,cijAll=[],aanbPosAll=0,aanbTotAll=0,alleQuotes=[],vertPos=0,vertTot=0;
+  let N=0,cijAll=[],vertPos=0,vertTot=0,alleQuotes=[];
   let orgGoedTel=0,orgIngevuld=0,eigenGoedTel=0,eigenIngevuld=0;
-  const cards=alleWs.map(w=>{
+  alleWs.forEach(w=>{
     const A=evalAggr(w.id);
-    N+=A.n;cijAll=cijAll.concat(A.cijfers);aanbPosAll+=A.aanbPos;aanbTotAll+=A.aanbTot;alleQuotes=alleQuotes.concat(A.geleerd);vertPos+=A.vertrouwenPos;vertTot+=A.vertrouwenTot;
+    N+=A.n;cijAll=cijAll.concat(A.cijfers);vertPos+=A.vertrouwenPos;vertTot+=A.vertrouwenTot;alleQuotes=alleQuotes.concat(A.geleerd);
     if(A.org&&A.org.samenwerking){ orgIngevuld++; if(A.org.samenwerking==='Goed'||A.org.samenwerking==='Zeer goed') orgGoedTel++; }
     if(A.eigen&&A.eigen.samenwerking){ eigenIngevuld++; if(A.eigen.samenwerking==='Goed'||A.eigen.samenwerking==='Zeer goed') eigenGoedTel++; }
+  });
+  const gem=cijAll.length?(cijAll.reduce((a,b)=>a+b,0)/cijAll.length):null;
+  const pctZekerder=vertTot?Math.round(vertPos/vertTot*100):0;
+  const pctOrgGoed=orgIngevuld?Math.round(orgGoedTel/orgIngevuld*100):0;
+  const pctEigenGoed=eigenIngevuld?Math.round(eigenGoedTel/eigenIngevuld*100):0;
+  const cijWsAantal=alleWs.filter(w=>evalAggr(w.id).n>0).length;
+  const missendeWs=alleWs.filter(w=>evalAggr(w.id).n===0);
+  const missendeDagbesteding=missendeWs.filter(w=>w.evalNvt).length;
+  const missendeOverig=missendeWs.length-missendeDagbesteding;
+  const missendeDelen=[missendeDagbesteding?`${missendeDagbesteding}× dagbesteding`:'',missendeOverig?`${missendeOverig}× nog niet ingevuld`:''].filter(Boolean);
+  const totWs=db.workshops.length, totD=db.deelnemers.length;
+  const beid=db.deelnemers.filter(d=>d.les1==='ja'&&d.les2==='ja').length;
+  const alleenD1=db.deelnemers.filter(d=>d.les1==='ja'&&d.les2!=='ja').length;
+  const alleenD2=db.deelnemers.filter(d=>d.les2==='ja'&&d.les1!=='ja').length;
+  const bereikt=beid+alleenD1+alleenD2;
+  const pctBeid=bereikt?Math.round(beid/bereikt*100):0;
+  const pctD1=bereikt?Math.round(alleenD1/bereikt*100):0;
+  const pctD2=bereikt?Math.round(alleenD2/bereikt*100):0;
+  const dag1Totaal=beid+alleenD1, dag2Totaal=beid+alleenD2;
+  const pctD1MetBeide=dag1Totaal?Math.round(beid/dag1Totaal*100):0;
+  const pctD2MetBeide=dag2Totaal?Math.round(beid/dag2Totaal*100):0;
+  const lft=leeftijdBuckets(db.deelnemers), app=apparaatBuckets(db.deelnemers);
+  return {alleWs,N,cijAll,gem,pctZekerder,orgIngevuld,orgGoedTel,pctOrgGoed,eigenIngevuld,eigenGoedTel,pctEigenGoed,cijWsAantal,missendeWs,missendeDagbesteding,missendeOverig,missendeDelen,totWs,totD,beid,alleenD1,alleenD2,bereikt,pctBeid,pctD1,pctD2,dag1Totaal,dag2Totaal,pctD1MetBeide,pctD2MetBeide,lft,app,alleQuotes};
+}
+function printGemeenteEvaluatie(){
+  const S=gemeenteStats();
+  const alleWs=S.alleWs;
+  const cards=alleWs.map(w=>{
+    const A=evalAggr(w.id);
     const geenEval = w.evalNvt && A.n===0;
     const dBar = geenEval
       ? `<span class="sess-val nvt">n.v.t.</span>`
@@ -1376,49 +1407,28 @@ function printGemeenteEvaluatie(){
       </div>
     </div>`;
   }).join('');
-  const gem=cijAll.length?(cijAll.reduce((a,b)=>a+b,0)/cijAll.length):null;
-  const pctAanb=aanbTotAll?Math.round(aanbPosAll/aanbTotAll*100):0;
-  const pctZekerder=vertTot?Math.round(vertPos/vertTot*100):0;
-  const pctOrgGoed=orgIngevuld?Math.round(orgGoedTel/orgIngevuld*100):0;
-  const pctEigenGoed=eigenIngevuld?Math.round(eigenGoedTel/eigenIngevuld*100):0;
-  const cijWsAantal=alleWs.filter(w=>evalAggr(w.id).n>0).length;
-  const missendeWs=alleWs.filter(w=>evalAggr(w.id).n===0);
-  const missendeDagbesteding=missendeWs.filter(w=>w.evalNvt).length;
-  const missendeOverig=missendeWs.length-missendeDagbesteding;
-  const missendeTekst=missendeWs.length?` — ${[missendeDagbesteding?`${missendeDagbesteding}× dagbesteding`:'',missendeOverig?`${missendeOverig}× nog niet ingevuld`:''].filter(Boolean).join(', ')}`:'';
-  const totWs=db.workshops.length, totD=db.deelnemers.length;
-  const beid=db.deelnemers.filter(d=>d.les1==='ja'&&d.les2==='ja').length;
-  const alleenD1=db.deelnemers.filter(d=>d.les1==='ja'&&d.les2!=='ja').length;
-  const alleenD2=db.deelnemers.filter(d=>d.les2==='ja'&&d.les1!=='ja').length;
-  const bereikt=beid+alleenD1+alleenD2;
-  const pctBeid=bereikt?Math.round(beid/bereikt*100):0;
-  const pctD1=bereikt?Math.round(alleenD1/bereikt*100):0;
-  const pctD2=bereikt?Math.round(alleenD2/bereikt*100):0;
-  const dag1Totaal=beid+alleenD1, dag2Totaal=beid+alleenD2;
-  const pctD1MetBeide=dag1Totaal?Math.round(beid/dag1Totaal*100):0;
-  const pctD2MetBeide=dag2Totaal?Math.round(beid/dag2Totaal*100):0;
-  const lft=leeftijdBuckets(db.deelnemers), app=apparaatBuckets(db.deelnemers);
-  const quotes=alleQuotes.slice(0,8).map(q=>`<div class="qbox">${q}</div>`).join('')||'<div style="font-size:10pt;color:#aaa;">—</div>';
+  const quotes=S.alleQuotes.slice(0,8).map(q=>`<div class="qbox">${q}</div>`).join('')||'<div style="font-size:10pt;color:#aaa;">—</div>';
+  const missendeTekst=S.missendeDelen.length?` — ${S.missendeDelen.join(', ')}`:'';
   const page=`<div class="page">${evalHEAD()}<div class="body">${evalTB('Evaluatie — Gemeente')}
     <div class="ws-sub">Programma Digitale Inclusie · ${new Date().toLocaleDateString('nl-NL',{day:'numeric',month:'long',year:'numeric'})}</div>
     <div class="section"><div class="sec-label">Bereik — formeel kader</div>
       <div class="stat-grid">
-        <div class="stat stat-o"><div class="stat-n">${totWs}<span style="font-size:13pt;color:#aaa;">/10</span></div><div class="stat-l">Workshops</div></div>
-        <div class="stat stat-o"><div class="stat-n">${bereikt}</div><div class="stat-l">Totaal deelnemers (bereikt)</div></div>
-        <div class="stat stat-t"><div class="stat-n">${dag1Totaal}</div><div class="stat-l">Deelnemers dag 1</div><div style="font-size:7.5pt;color:#999;margin-top:1mm;">waarvan ${beid} ook dag 2 (${pctD1MetBeide}%)</div></div>
-        <div class="stat stat-t"><div class="stat-n">${dag2Totaal}</div><div class="stat-l">Deelnemers dag 2</div><div style="font-size:7.5pt;color:#999;margin-top:1mm;">waarvan ${beid} ook dag 1 (${pctD2MetBeide}%)</div></div>
+        <div class="stat stat-o"><div class="stat-n">${S.totWs}<span style="font-size:13pt;color:#aaa;">/10</span></div><div class="stat-l">Workshops</div></div>
+        <div class="stat stat-o"><div class="stat-n">${S.bereikt}</div><div class="stat-l">Totaal deelnemers (bereikt)</div></div>
+        <div class="stat stat-t"><div class="stat-n">${S.dag1Totaal}</div><div class="stat-l">Deelnemers dag 1</div><div style="font-size:7.5pt;color:#999;margin-top:1mm;">waarvan ${S.beid} ook dag 2 (${S.pctD1MetBeide}%)</div></div>
+        <div class="stat stat-t"><div class="stat-n">${S.dag2Totaal}</div><div class="stat-l">Deelnemers dag 2</div><div style="font-size:7.5pt;color:#999;margin-top:1mm;">waarvan ${S.beid} ook dag 1 (${S.pctD2MetBeide}%)</div></div>
       </div>
-      <div style="font-size:9pt;color:#777;margin-top:2mm;">${beid} deelnemers (${pctBeid}% van het totaal bereikt) waren aanwezig op beide dagdelen — dat is de gesubsidieerde prestatie-eenheid. ${totD>bereikt?`(${totD-bereikt} geregistreerd maar geen van beide dagen aanwezig.)`:''}</div></div>
+      <div style="font-size:9pt;color:#777;margin-top:2mm;">${S.beid} deelnemers (${S.pctBeid}% van het totaal bereikt) waren aanwezig op beide dagdelen — dat is de gesubsidieerde prestatie-eenheid. ${S.totD>S.bereikt?`(${S.totD-S.bereikt} geregistreerd maar geen van beide dagen aanwezig.)`:''}</div></div>
     <div class="section"><div class="sec-label">Tevredenheid</div>
       <div class="stat-grid">
-        <div class="stat stat-o"><div class="stat-n">${gem!=null?gem.toFixed(1):'—'}</div><div class="stat-l">Gem. cijfer deelnemers (${cijWsAantal}/${totWs} sessies${missendeTekst})</div></div>
-        <div class="stat stat-t"><div class="stat-n">${pctOrgGoed}%</div><div class="stat-l">Organisaties: samenwerking goed/zeer goed (${orgIngevuld}/${totWs})</div></div>
-        <div class="stat stat-t"><div class="stat-n">${pctEigenGoed}%</div><div class="stat-l">Eigen: samenwerking goed/zeer goed (${eigenIngevuld} ingevuld)</div></div>
-        <div class="stat stat-t"><div class="stat-n">${pctZekerder}%</div><div class="stat-l">Zekerder online (${N} formulieren)</div></div>
+        <div class="stat stat-o"><div class="stat-n">${S.gem!=null?S.gem.toFixed(1):'—'}</div><div class="stat-l">Gem. cijfer deelnemers (${S.cijWsAantal}/${S.totWs} sessies${missendeTekst})</div></div>
+        <div class="stat stat-t"><div class="stat-n">${S.pctOrgGoed}%</div><div class="stat-l">Organisaties: samenwerking goed/zeer goed (${S.orgIngevuld}/${S.totWs})</div></div>
+        <div class="stat stat-t"><div class="stat-n">${S.pctEigenGoed}%</div><div class="stat-l">Eigen: samenwerking goed/zeer goed (${S.eigenIngevuld} ingevuld)</div></div>
+        <div class="stat stat-t"><div class="stat-n">${S.pctZekerder}%</div><div class="stat-l">Zekerder online (${S.N} formulieren)</div></div>
       </div></div>
     <div class="section"><div class="two-col">
-      <div><div class="sec-label">Leeftijdsverdeling <span style="font-size:7pt;color:#aaa;font-weight:400;text-transform:none;letter-spacing:0;">(per 5 jaar)</span></div>${demoBarsHtml(lft.rows,'o')}${lft.gem!=null?`<div class="gem-pill">Gemiddelde leeftijd: ${lft.gem} jaar</div>`:''}</div>
-      <div><div class="sec-label teal">Type apparaat</div>${demoBarsHtml(app,'t')}</div>
+      <div><div class="sec-label">Leeftijdsverdeling <span style="font-size:7pt;color:#aaa;font-weight:400;text-transform:none;letter-spacing:0;">(per 5 jaar)</span></div>${demoBarsHtml(S.lft.rows,'o')}${S.lft.gem!=null?`<div class="gem-pill">Gemiddelde leeftijd: ${S.lft.gem} jaar</div>`:''}</div>
+      <div><div class="sec-label teal">Type apparaat</div>${demoBarsHtml(S.app,'t')}</div>
     </div></div>
     <div class="section"><div class="sec-label">Per sessie</div>${cards}</div>
     <div style="font-size:9pt;color:#777;">"n.v.t." = deelnemers konden niet evalueren (reden bij sessie vermeld). "–" = nog geen evaluatie ingevoerd. Sessies zonder feedback (geen deelnemer-, organisatie- of eigen evaluatie) tellen niet mee in de percentages hierboven. Organisatie en St. Mens Centraal &amp; Rob Bezemer Photography beantwoorden elk dezelfde twee vragen: samenwerking en aansluiting doelgroep.</div>
@@ -2197,48 +2207,51 @@ function printWorkshoprapport(){
 // ── EVALUATIE ──
 function renderEvaluatie(){
   const el=document.getElementById('eval-content');
-  const totWs=db.workshops.length, totD=db.deelnemers.length;
-  const beid=db.deelnemers.filter(d=>d.les1==='ja'&&d.les2==='ja').length;
-  const iph=db.deelnemers.filter(d=>d.apparaat==='iPhone').length;
-  const and=db.deelnemers.filter(d=>d.apparaat==='Android').length;
-  const cert=db.deelnemers.filter(d=>d.les1==='ja'||d.les2==='ja').length;
+  const S=gemeenteStats();
   const vwUniek=[...new Set((db.wsVrijw||[]).map(k=>k.vId))];
-  const evWss=db.workshops.filter(w=>(db.evaluaties||[]).some(e=>e.wsId===w.id&&e.type==='d'));
-  const missendeWs=db.workshops.filter(w=>evalAggr(w.id).n===0);
-  const missendeDagbesteding=missendeWs.filter(w=>w.evalNvt).length;
-  const missendeOverig=missendeWs.length-missendeDagbesteding;
-  const missendeTekst=missendeWs.length?` (${[missendeDagbesteding?`${missendeDagbesteding}× dagbesteding`:'',missendeOverig?`${missendeOverig}× nog niet ingevuld`:''].filter(Boolean).join(', ')})`:'';
-  const alleenD1App=db.deelnemers.filter(d=>d.les1==='ja'&&d.les2!=='ja').length;
-  const alleenD2App=db.deelnemers.filter(d=>d.les2==='ja'&&d.les1!=='ja').length;
-  const bereiktApp=beid+alleenD1App+alleenD2App;
-  const pctBeidApp=bereiktApp?Math.round(beid/bereiktApp*100):0;
-  let nForm=0,cijAll=[],aPos=0,aTot=0,mJa=0,mTot=0;
-  evWss.forEach(w=>{const A=evalAggr(w.id);nForm+=A.n;cijAll=cijAll.concat(A.cijfers);aPos+=A.aanbPos;aTot+=A.aanbTot;mJa+=A.meer['Ja'];mTot+=A.meerTot;});
-  const gemCijfer=cijAll.length?(cijAll.reduce((a,b)=>a+b,0)/cijAll.length).toFixed(1):'—';
-  const pctAanb=aTot?Math.round(aPos/aTot*100):0;
-  const pctMeer=mTot?Math.round(mJa/mTot*100):0;
+  const cert=db.deelnemers.filter(d=>d.les1==='ja'||d.les2==='ja').length;
+  const missendeTekst=S.missendeDelen.length?` (${S.missendeDelen.join(', ')})`:'';
+  const appBars=(rows,cls)=>rows.length?rows.map(r=>`<div style="display:flex;align-items:center;gap:8px;margin-bottom:5px;font-size:12px;">
+      <div style="width:56px;flex-shrink:0;color:#666;${r.onbekend?'color:#c07c1f;':''}">${r.label}</div>
+      <div class="pb" style="flex:1;"><div class="pb-${r.onbekend?'':cls}" style="width:${Math.round(r.count/Math.max(1,...rows.map(x=>x.count))*100)}%;${r.onbekend?'background:#ccc;':''}"></div></div>
+      <div style="width:22px;text-align:right;color:#888;${r.onbekend?'color:#c07c1f;':''}">${r.count}</div>
+    </div>`).join(''):'<div style="font-size:12px;color:#aaa;">Geen gegevens.</div>';
   el.innerHTML=`
-  <div class="stat-grid">
-    <div class="stat"><div class="stat-n">${totWs}<span style="font-size:14px;color:#aaa;">/10</span></div><div class="stat-l">Workshops</div></div>
-    <div class="stat"><div class="stat-n">${totD}</div><div class="stat-l">Deelnemers</div></div>
-    <div class="stat"><div class="stat-n" style="color:#4DA99A;">${cert}</div><div class="stat-l">Certificaten</div></div>
-    <div class="stat"><div class="stat-n">${vwUniek.length}</div><div class="stat-l">Vrijwilligers</div></div>
-  </div>
-  <div class="stat-grid">
-    <div class="stat"><div class="stat-n">${beid}</div><div class="stat-l">Beide dagdelen (${pctBeidApp}% van bereikt)</div></div>
-    <div class="stat"><div class="stat-n">${iph}</div><div class="stat-l">iPhone</div></div>
-    <div class="stat"><div class="stat-n">${and}</div><div class="stat-l">Android</div></div>
-    <div class="stat"><div class="stat-n">${totD-iph-and}</div><div class="stat-l">Overig</div></div>
+  <div class="card">
+    <div class="card-title">Bereik — formeel kader</div>
+    <div class="stat-grid">
+      <div class="stat"><div class="stat-n">${S.totWs}<span style="font-size:14px;color:#aaa;">/10</span></div><div class="stat-l">Workshops</div></div>
+      <div class="stat"><div class="stat-n">${S.bereikt}</div><div class="stat-l">Totaal deelnemers (bereikt)</div></div>
+      <div class="stat"><div class="stat-n">${S.dag1Totaal}</div><div class="stat-l">Deelnemers dag 1<br><span style="font-size:10px;color:#aaa;">waarvan ${S.beid} ook dag 2 (${S.pctD1MetBeide}%)</span></div></div>
+      <div class="stat"><div class="stat-n">${S.dag2Totaal}</div><div class="stat-l">Deelnemers dag 2<br><span style="font-size:10px;color:#aaa;">waarvan ${S.beid} ook dag 1 (${S.pctD2MetBeide}%)</span></div></div>
+    </div>
+    <div style="font-size:12px;color:#888;margin-top:10px;">${S.beid} deelnemers (${S.pctBeid}% van het totaal bereikt) waren aanwezig op beide dagdelen — dat is de gesubsidieerde prestatie-eenheid.</div>
   </div>
   <div class="card">
-    <div class="card-title">Evaluaties deelnemers ${evWss.length?`· ${evWss.length} workshop(s) · ${nForm} formulieren`:''}${missendeTekst}</div>
-    ${evWss.length?`<div class="stat-grid">
-      <div class="stat"><div class="stat-n" style="color:#E8943A;">${gemCijfer}<span style="font-size:14px;color:#aaa;">/10</span></div><div class="stat-l">Gem. cijfer</div></div>
-      <div class="stat"><div class="stat-n" style="color:#4DA99A;">${pctAanb}%</div><div class="stat-l">Beveelt aan</div></div>
-      <div class="stat"><div class="stat-n">${pctMeer}%</div><div class="stat-l">Wil meer</div></div>
-      <div class="stat"><div class="stat-n">${nForm}</div><div class="stat-l">Reacties</div></div>
+    <div class="card-title">Tevredenheid</div>
+    <div class="stat-grid">
+      <div class="stat"><div class="stat-n" style="color:#E8943A;">${S.gem!=null?S.gem.toFixed(1):'—'}</div><div class="stat-l">Gem. cijfer deelnemers<br><span style="font-size:10px;color:#aaa;">${S.cijWsAantal}/${S.totWs} sessies${missendeTekst}</span></div></div>
+      <div class="stat"><div class="stat-n" style="color:#4DA99A;">${S.pctOrgGoed}%</div><div class="stat-l">Organisaties: samenwerking<br><span style="font-size:10px;color:#aaa;">goed/zeer goed (${S.orgIngevuld}/${S.totWs})</span></div></div>
+      <div class="stat"><div class="stat-n" style="color:#4DA99A;">${S.pctEigenGoed}%</div><div class="stat-l">Eigen: samenwerking<br><span style="font-size:10px;color:#aaa;">goed/zeer goed (${S.eigenIngevuld} ingevuld)</span></div></div>
+      <div class="stat"><div class="stat-n" style="color:#4DA99A;">${S.pctZekerder}%</div><div class="stat-l">Zekerder online<br><span style="font-size:10px;color:#aaa;">(${S.N} formulieren)</span></div></div>
     </div>
-    <button class="btn btn-t" onclick="printGemeenteEvaluatie()" style="margin-top:12px;">🏛 Gemeente-evaluatie (print)</button>`:'<div class="lege">Nog geen evaluaties ingevoerd. Gebruik 📝 Evaluatie op een workshopkaart.</div>'}
+  </div>
+  <div class="card">
+    <div class="card-title">Leeftijdsverdeling <span style="font-weight:400;color:#aaa;font-size:11px;">(per 5 jaar)</span></div>
+    ${appBars(S.lft.rows,'o')}
+    ${S.lft.gem!=null?`<div style="display:inline-block;background:#1C1E20;color:#fff;font-size:12px;padding:3px 10px;border-radius:10px;margin-top:6px;">Gemiddelde leeftijd: ${S.lft.gem} jaar</div>`:''}
+  </div>
+  <div class="card">
+    <div class="card-title">Type apparaat</div>
+    ${appBars(S.app,'t')}
+  </div>
+  <div class="card">
+    <div class="card-title">Overig</div>
+    <div class="stat-grid">
+      <div class="stat"><div class="stat-n" style="color:#4DA99A;">${cert}</div><div class="stat-l">Certificaten</div></div>
+      <div class="stat"><div class="stat-n">${vwUniek.length}</div><div class="stat-l">Vrijwilligers</div></div>
+    </div>
+    <button class="btn btn-t" onclick="printGemeenteEvaluatie()" style="margin-top:12px;">🏛 Gemeente-evaluatie (print)</button>
   </div>
   <div class="card">
     <div class="card-title">Per workshop</div>
