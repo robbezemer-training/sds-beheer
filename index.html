@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Samen Digitaal Sterk — Beheer v8aj</title>
+<title>Samen Digitaal Sterk — Beheer v8ak</title>
 <style>
 @font-face {
   font-family: 'Bebas Neue';
@@ -138,7 +138,7 @@ input[readonly]{background:#f9f9f9;color:#888;}
     <div style="font-size:40px;margin-bottom:8px;">📋</div>
     <div style="font-size:18px;font-weight:700;color:#1C1E20;margin-bottom:4px;">Samen Digitaal Sterk</div>
     <div style="font-size:12px;color:#888;margin-bottom:2px;">Rotterdam 2026</div>
-    <div style="font-size:10px;color:#bbb;margin-bottom:22px;">v8aj</div>
+    <div style="font-size:10px;color:#bbb;margin-bottom:22px;">v8ak</div>
     <input type="password" id="login-pin" placeholder="Toegangscode" maxlength="6"
       style="text-align:center;letter-spacing:6px;font-size:20px;width:100%;padding:12px;border:2px solid #ddd;border-radius:10px;outline:none;margin-bottom:12px;"
       onkeydown="if(event.key==='Enter') doLogin()"
@@ -152,7 +152,7 @@ input[readonly]{background:#f9f9f9;color:#888;}
   <div class="topbar-logo">📋</div>
   <div>
     <div style="font-size:15px;font-weight:600;">Samen Digitaal Sterk</div>
-    <div style="font-size:11px;color:#aaa;">Beheer · v8aj · Rotterdam 2026</div>
+    <div style="font-size:11px;color:#aaa;">Beheer · v8ak · Rotterdam 2026</div>
   </div>
   <div style="margin-left:auto;display:flex;align-items:center;gap:12px;">
     <span id="rol-badge" style="display:none;font-size:11px;color:#aaa;"></span>
@@ -1286,14 +1286,16 @@ function evalRapportPage(wsId){
         <div class="stat stat-t"><div class="stat-n">${pctAanb}%</div><div class="stat-l">Beveelt aan</div></div>
         <div class="stat stat-t"><div class="stat-n">${pctMeer}%</div><div class="stat-l">Wil meer</div></div>
       </div></div>`;
+  const dag1TotaalWs=beideWs+alleenD1Ws, dag2TotaalWs=beideWs+alleenD2Ws;
+  const pctD1MetBeideWs=dag1TotaalWs?Math.round(beideWs/dag1TotaalWs*100):0;
+  const pctD2MetBeideWs=dag2TotaalWs?Math.round(beideWs/dag2TotaalWs*100):0;
   const bereikBlok = `<div class="section"><div class="sec-label">Bereik deze sessie</div>
       <div class="stat-grid">
-        <div class="stat stat-o"><div class="stat-n">${bereiktWs}</div><div class="stat-l">Bereikt (alleen D1 + alleen D2 + beide)</div></div>
-        <div class="stat stat-t"><div class="stat-n">${pctBeideWs}%</div><div class="stat-l">Beide dagdelen (${beideWs})</div></div>
-        <div class="stat stat-t"><div class="stat-n">${pctD1Ws}%</div><div class="stat-l">Alleen D1 (${alleenD1Ws})</div></div>
-        <div class="stat stat-o"><div class="stat-n">${pctD2Ws}%</div><div class="stat-l">Alleen D2 (${alleenD2Ws})</div></div>
+        <div class="stat stat-o"><div class="stat-n">${bereiktWs}</div><div class="stat-l">Totaal deelnemers (bereikt)</div></div>
+        <div class="stat stat-t"><div class="stat-n">${dag1TotaalWs}</div><div class="stat-l">Deelnemers dag 1</div><div style="font-size:7.5pt;color:#999;margin-top:1mm;">waarvan ${beideWs} ook dag 2 (${pctD1MetBeideWs}%)</div></div>
+        <div class="stat stat-t"><div class="stat-n">${dag2TotaalWs}</div><div class="stat-l">Deelnemers dag 2</div><div style="font-size:7.5pt;color:#999;margin-top:1mm;">waarvan ${beideWs} ook dag 1 (${pctD2MetBeideWs}%)</div></div>
+        <div class="stat stat-o"><div class="stat-n">${lft.gem!=null?lft.gem:'—'}<span style="font-size:13pt;color:#aaa;"> jr</span></div><div class="stat-l">Gemiddelde leeftijd</div></div>
       </div>
-      <div style="font-size:9pt;color:#777;margin:2mm 0;">Gemiddelde leeftijd: ${lft.gem!=null?lft.gem+' jaar':'—'}</div>
       <div class="two-col" style="margin-top:3mm;">
         <div><div class="sec-label" style="font-size:7pt;">Leeftijdsverdeling <span style="text-transform:none;letter-spacing:0;color:#aaa;">(per 5 jaar)</span></div>${demoBarsHtml(lft.rows,'o')}</div>
         <div><div class="sec-label teal" style="font-size:7pt;">Type apparaat</div>${demoBarsHtml(app,'t')}</div>
@@ -1365,6 +1367,9 @@ function printGemeenteEvaluatie(){
   const pctBeid=bereikt?Math.round(beid/bereikt*100):0;
   const pctD1=bereikt?Math.round(alleenD1/bereikt*100):0;
   const pctD2=bereikt?Math.round(alleenD2/bereikt*100):0;
+  const dag1Totaal=beid+alleenD1, dag2Totaal=beid+alleenD2;
+  const pctD1MetBeide=dag1Totaal?Math.round(beid/dag1Totaal*100):0;
+  const pctD2MetBeide=dag2Totaal?Math.round(beid/dag2Totaal*100):0;
   const lft=leeftijdBuckets(db.deelnemers), app=apparaatBuckets(db.deelnemers);
   const quotes=alleQuotes.slice(0,8).map(q=>`<div class="qbox">${q}</div>`).join('')||'<div style="font-size:10pt;color:#aaa;">—</div>';
   const page=`<div class="page">${evalHEAD()}<div class="body">${evalTB('Evaluatie — Gemeente')}
@@ -1372,11 +1377,11 @@ function printGemeenteEvaluatie(){
     <div class="section"><div class="sec-label">Bereik — formeel kader</div>
       <div class="stat-grid">
         <div class="stat stat-o"><div class="stat-n">${totWs}<span style="font-size:13pt;color:#aaa;">/10</span></div><div class="stat-l">Workshops</div></div>
-        <div class="stat stat-o"><div class="stat-n">${totD}</div><div class="stat-l">Geregistreerde deelnemers</div></div>
-        <div class="stat stat-t"><div class="stat-n">${bereikt}</div><div class="stat-l">Bereikt (alleen D1 + alleen D2 + beide)</div></div>
-        <div class="stat stat-t"><div class="stat-n">${pctBeid}%</div><div class="stat-l">Beide dagdelen (${beid})</div></div>
+        <div class="stat stat-o"><div class="stat-n">${bereikt}</div><div class="stat-l">Totaal deelnemers (bereikt)</div></div>
+        <div class="stat stat-t"><div class="stat-n">${dag1Totaal}</div><div class="stat-l">Deelnemers dag 1</div><div style="font-size:7.5pt;color:#999;margin-top:1mm;">waarvan ${beid} ook dag 2 (${pctD1MetBeide}%)</div></div>
+        <div class="stat stat-t"><div class="stat-n">${dag2Totaal}</div><div class="stat-l">Deelnemers dag 2</div><div style="font-size:7.5pt;color:#999;margin-top:1mm;">waarvan ${beid} ook dag 1 (${pctD2MetBeide}%)</div></div>
       </div>
-      <div style="font-size:9pt;color:#777;margin-top:2mm;">Van de ${bereikt} bereikte deelnemers: ${pctBeid}% beide dagdelen, ${pctD1}% alleen D1 (${alleenD1}), ${pctD2}% alleen D2 (${alleenD2}).</div></div>
+      <div style="font-size:9pt;color:#777;margin-top:2mm;">${beid} deelnemers (${pctBeid}% van het totaal bereikt) waren aanwezig op beide dagdelen — dat is de gesubsidieerde prestatie-eenheid. ${totD>bereikt?`(${totD-bereikt} geregistreerd maar geen van beide dagen aanwezig.)`:''}</div></div>
     <div class="section"><div class="sec-label">Tevredenheid</div>
       <div class="stat-grid">
         <div class="stat stat-o"><div class="stat-n">${gem!=null?gem.toFixed(1):'—'}</div><div class="stat-l">Gem. cijfer deelnemers (${cijWsAantal}/${totWs} sessies)</div></div>
