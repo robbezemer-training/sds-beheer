@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Samen Digitaal Sterk — Beheer v8aq</title>
+<title>Samen Digitaal Sterk — Beheer v8ar</title>
 <style>
 @font-face {
   font-family: 'Bebas Neue';
@@ -139,7 +139,7 @@ input[readonly]{background:#f9f9f9;color:#888;}
     <div style="font-size:40px;margin-bottom:8px;">📋</div>
     <div style="font-size:18px;font-weight:700;color:#1C1E20;margin-bottom:4px;">Samen Digitaal Sterk</div>
     <div style="font-size:12px;color:#888;margin-bottom:2px;">Rotterdam 2026</div>
-    <div style="font-size:10px;color:#bbb;margin-bottom:22px;">v8aq</div>
+    <div style="font-size:10px;color:#bbb;margin-bottom:22px;">v8ar</div>
     <input type="password" id="login-pin" placeholder="Toegangscode" maxlength="6"
       style="text-align:center;letter-spacing:6px;font-size:20px;width:100%;padding:12px;border:2px solid #ddd;border-radius:10px;outline:none;margin-bottom:12px;"
       onkeydown="if(event.key==='Enter') doLogin()"
@@ -153,7 +153,7 @@ input[readonly]{background:#f9f9f9;color:#888;}
   <div class="topbar-logo">📋</div>
   <div>
     <div style="font-size:15px;font-weight:600;">Samen Digitaal Sterk</div>
-    <div style="font-size:11px;color:#aaa;">Beheer · v8aq · Rotterdam 2026</div>
+    <div style="font-size:11px;color:#aaa;">Beheer · v8ar · Rotterdam 2026</div>
   </div>
   <div style="margin-left:auto;display:flex;align-items:center;gap:12px;">
     <span id="rol-badge" style="display:none;font-size:11px;color:#aaa;"></span>
@@ -1122,11 +1122,11 @@ html,body { background:#e9e9e9; font-family:'Source Sans 3',Arial,sans-serif; co
 .deel-table tbody tr:nth-child(even){ background:#fafafa; } .deel-table td.mail { color:#555; }
 .deel-table thead { display:table-header-group; } .deel-table tr { page-break-inside:avoid; }
 .deel-table .c { text-align:center; }
-.deel-table th:nth-child(1),.deel-table td:nth-child(1){width:36mm;} .deel-table th:nth-child(2),.deel-table td:nth-child(2){width:20mm;}
-.deel-table th:nth-child(3),.deel-table td:nth-child(3){width:34mm;} .deel-table th:nth-child(4),.deel-table td:nth-child(4){width:28mm;}
-.deel-table th:nth-child(5),.deel-table td:nth-child(5){width:52mm;} .deel-table th:nth-child(6),.deel-table td:nth-child(6){width:14mm;}
-.deel-table th:nth-child(7),.deel-table td:nth-child(7){width:24mm;} .deel-table th:nth-child(8),.deel-table td:nth-child(8){width:13mm;}
-.deel-table th:nth-child(9),.deel-table td:nth-child(9){width:13mm;}
+.deel-table th:nth-child(1),.deel-table td:nth-child(1){width:32mm;} .deel-table th:nth-child(2),.deel-table td:nth-child(2){width:16mm;}
+.deel-table th:nth-child(3),.deel-table td:nth-child(3){width:14mm;} .deel-table th:nth-child(4),.deel-table td:nth-child(4){width:30mm;}
+.deel-table th:nth-child(5),.deel-table td:nth-child(5){width:26mm;} .deel-table th:nth-child(6),.deel-table td:nth-child(6){width:48mm;}
+.deel-table th:nth-child(7),.deel-table td:nth-child(7){width:12mm;} .deel-table th:nth-child(8),.deel-table td:nth-child(8){width:20mm;}
+.deel-table th:nth-child(9),.deel-table td:nth-child(9){width:11mm;} .deel-table th:nth-child(10),.deel-table td:nth-child(10){width:11mm;}
 .legend-row { padding:2mm 6mm 0; font-size:8.5pt; color:#666; margin-top:auto; }
 .table-scroll { overflow-x:auto; -webkit-overflow-scrolling:touch; }
 .bar { height:6px; background:linear-gradient(to right,#E8943A 50%,#4DA99A 50%); flex-shrink:0; }
@@ -1368,8 +1368,9 @@ function deelnemerslijstPages(wsId){
   const vk=v=>v==='ja'?'✓':'—';
   const rij=d=>`<tr>
     <td>${d.naam||'—'}</td>
+    <td>${d.postcode||'—'}</td>
     <td>${d.huisnummer||'—'}</td>
-    <td>${[d.postcode,d.woonplaats].filter(Boolean).join(' ')||'—'}</td>
+    <td>${d.woonplaats||'—'}</td>
     <td>${d.tel||'—'}</td>
     <td class="mail">${d.email||'—'}</td>
     <td class="c">${d.leeftijd||'—'}</td>
@@ -1382,12 +1383,12 @@ function deelnemerslijstPages(wsId){
   const perPag=Math.ceil(D.length/nPag);
   const chunks=[]; for(let i=0;i<D.length;i+=perPag) chunks.push(D.slice(i,i+perPag));
   if(!chunks.length) chunks.push([]);
-  const kop=`<thead><tr><th>Naam</th><th>Adres</th><th>Postcode / plaats</th><th>Telefoon</th><th>E-mail</th><th class="c">Lft</th><th>Apparaat</th><th class="c">D1</th><th class="c">D2</th></tr></thead>`;
+  const kop=`<thead><tr><th>Naam</th><th>Postcode</th><th>Huisnr</th><th>Woonplaats</th><th>Telefoon</th><th>E-mail</th><th class="c">Lft</th><th>Apparaat</th><th class="c">D1</th><th class="c">D2</th></tr></thead>`;
   return chunks.map((chunk,idx)=>{
     const sub=chunks.length>1?` &nbsp;·&nbsp; deel ${idx+1}/${chunks.length}`:'';
     return `<div class="page land">${evalHEAD(' compact')}<div class="body">${evalTB('Deelnemerslijst')}
       <div class="ws-sub">${orgTekst} · ${fmtDate(w.dag1)} &amp; ${fmtDate(w.dag2)}${sub}</div>
-      <div class="table-scroll"><table class="deel-table">${kop}<tbody>${chunk.length?chunk.map(rij).join(''):`<tr><td colspan="9" style="color:#aaa;text-align:center;padding:6mm;">Nog geen deelnemers geregistreerd.</td></tr>`}</tbody></table></div>
+      <div class="table-scroll"><table class="deel-table">${kop}<tbody>${chunk.length?chunk.map(rij).join(''):`<tr><td colspan="10" style="color:#aaa;text-align:center;padding:6mm;">Nog geen deelnemers geregistreerd.</td></tr>`}</tbody></table></div>
       </div><div class="legend-row">✓ aanwezig &nbsp;·&nbsp; — afwezig / onbekend</div>
       <div class="footer"><div class="footer-txt">Samen Digitaal Sterk · Rotterdam 2026</div><div class="footer-txt">Deelnemerslijst · ${orgTekst}</div></div><div class="bar" style="margin-top:2mm;"></div></div>`;
   }).join('');
