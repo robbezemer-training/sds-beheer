@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Samen Digitaal Sterk — Beheer v8ar</title>
+<title>Samen Digitaal Sterk — Beheer v8as</title>
 <style>
 @font-face {
   font-family: 'Bebas Neue';
@@ -139,7 +139,7 @@ input[readonly]{background:#f9f9f9;color:#888;}
     <div style="font-size:40px;margin-bottom:8px;">📋</div>
     <div style="font-size:18px;font-weight:700;color:#1C1E20;margin-bottom:4px;">Samen Digitaal Sterk</div>
     <div style="font-size:12px;color:#888;margin-bottom:2px;">Rotterdam 2026</div>
-    <div style="font-size:10px;color:#bbb;margin-bottom:22px;">v8ar</div>
+    <div style="font-size:10px;color:#bbb;margin-bottom:22px;">v8as</div>
     <input type="password" id="login-pin" placeholder="Toegangscode" maxlength="6"
       style="text-align:center;letter-spacing:6px;font-size:20px;width:100%;padding:12px;border:2px solid #ddd;border-radius:10px;outline:none;margin-bottom:12px;"
       onkeydown="if(event.key==='Enter') doLogin()"
@@ -153,7 +153,7 @@ input[readonly]{background:#f9f9f9;color:#888;}
   <div class="topbar-logo">📋</div>
   <div>
     <div style="font-size:15px;font-weight:600;">Samen Digitaal Sterk</div>
-    <div style="font-size:11px;color:#aaa;">Beheer · v8ar · Rotterdam 2026</div>
+    <div style="font-size:11px;color:#aaa;">Beheer · v8as · Rotterdam 2026</div>
   </div>
   <div style="margin-left:auto;display:flex;align-items:center;gap:12px;">
     <span id="rol-badge" style="display:none;font-size:11px;color:#aaa;"></span>
@@ -1190,6 +1190,9 @@ html,body { background:#e9e9e9; font-family:'Source Sans 3',Arial,sans-serif; co
 .map-box { background:#e8ecea; border-radius:8px; height:52mm; position:relative; overflow:hidden; border:1px solid #ddd; }
 .map-dot { position:absolute; border-radius:50%; background:rgba(232,148,58,.55); border:1.5px solid #E8943A; }
 .map-caption { font-size:8pt; color:#999; margin-top:2mm; }
+.mk-box { position:relative; width:100%; overflow:hidden; border-radius:8px; border:1px solid #ddd; background:#e8ecea; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+.mk-tile { position:absolute; display:block; max-width:none; margin:0; padding:0; border:0; }
+.mk-svg { position:absolute; left:0; top:0; width:100%; height:100%; }
 .pc-table { width:100%; border-collapse:collapse; font-size:9pt; }
 .pc-table td { padding:1.5mm 2mm; border-bottom:1px solid #f0f0f0; }
 .pc-table td:last-child { text-align:right; font-weight:700; }
@@ -1278,6 +1281,58 @@ function locatieKaartHtml(deelnemers){
   const rows=top.map(t=>`<tr><td>${t[0]}</td><td>${t[1]}</td></tr>`).join('')+(aantalOverig?`<tr style="color:#aaa;"><td colspan="2">+ ${aantalOverig} overige postcodes (${rest})</td></tr>`:'');
   return `<div class="two-col loc-two-col">
     <div><div class="map-box">${dots}</div><div class="map-caption">Cirkelgrootte = aantal deelnemers per postcode (viercijferig) — schematisch, geen exacte geografische kaart</div></div>
+    <div><table class="pc-table">${rows}</table></div>
+  </div>`;
+}
+
+// ── LOCATIEKAART MET ACHTERGROND (rapport gemeente) ──
+// Statisch en print-vast: PDOK BRT-Achtergrondkaart (grijs) als <img>-tegels + SVG-cirkels op de echte postcodepositie.
+// Valt terug op de schematische kaart (locatieKaartHtml) als er geen enkele postcode gegeocode kan worden.
+const PC_KAART={W:800,H:400,PADX:60,PADY:45,MINZ:10,MAXZ:13.5,TILE:'https://service.pdok.nl/kadaster/brt-achtergrondkaart/wmts/v2_0/grijs/EPSG:3857/'};
+function _mercX(lon,z){ return (lon+180)/360*Math.pow(2,z)*256; }
+function _mercY(lat,z){ const s=Math.sin(lat*Math.PI/180); return (0.5-Math.log((1+s)/(1-s))/(4*Math.PI))*Math.pow(2,z)*256; }
+async function locatieKaartHtmlAsync(deelnemers){
+  const counts=aggregatePostcodes();
+  const pcs=Object.keys(counts);
+  if(!pcs.length) return locatieKaartHtml(deelnemers);
+  const coords={};
+  await Promise.all(pcs.map(async pc=>{ try{ const c=await geocodePostcode(pc); if(c) coords[pc]=c; }catch(e){} }));
+  const gevonden=pcs.filter(pc=>coords[pc]);
+  if(!gevonden.length) return locatieKaartHtml(deelnemers);
+  const {W,H,PADX,PADY,MINZ,MAXZ,TILE}=PC_KAART;
+  // zoom: staploos (tegels worden licht opgeschaald) zodat alle postcodes met marge precies in beeld passen
+  const x0=gevonden.map(pc=>_mercX(coords[pc].lon,0)), y0=gevonden.map(pc=>_mercY(coords[pc].lat,0));
+  const spanX=Math.max(Math.max(...x0)-Math.min(...x0),1e-9), spanY=Math.max(Math.max(...y0)-Math.min(...y0),1e-9);
+  let zc=Math.min(Math.log2((W-2*PADX)/spanX),Math.log2((H-2*PADY)/spanY),MAXZ);
+  zc=Math.max(zc,MINZ);
+  const z=Math.floor(zc), ts=256*Math.pow(2,zc-z);   // z = tegelniveau, ts = tegelgrootte in kaart-eenheden
+  const xs=gevonden.map(pc=>_mercX(coords[pc].lon,zc)), ys=gevonden.map(pc=>_mercY(coords[pc].lat,zc));
+  const ox=(Math.min(...xs)+Math.max(...xs))/2-W/2, oy=(Math.min(...ys)+Math.max(...ys))/2-H/2;
+  // tegels
+  let tiles='';
+  for(let ty=Math.floor(oy/ts); ty<=Math.floor((oy+H)/ts); ty++){
+    for(let tx=Math.floor(ox/ts); tx<=Math.floor((ox+W)/ts); tx++){
+      tiles+=`<img class="mk-tile" alt="" src="${TILE}${String(z).padStart(2,'0')}/${tx}/${ty}.png" style="left:${((tx*ts-ox)/W*100).toFixed(3)}%;top:${((ty*ts-oy)/H*100).toFixed(3)}%;width:${(ts/W*100+0.15).toFixed(3)}%;height:${(ts/H*100+0.3).toFixed(3)}%;">`;
+    }
+  }
+  // cirkels (grootste eerst, zodat kleine bovenop liggen)
+  const top5=new Set(postcodeTop(deelnemers,5).top.map(t=>t[0]));
+  const items=gevonden.map(pc=>({pc,n:counts[pc],x:_mercX(coords[pc].lon,zc)-ox,y:_mercY(coords[pc].lat,zc)-oy}))
+    .filter(i=>i.x>=0&&i.x<=W&&i.y>=0&&i.y<=H)
+    .sort((a,b)=>b.n-a.n);
+  const max=Math.max(...items.map(i=>i.n),1);
+  const rad=n=>8+Math.sqrt(n/max)*30;
+  const txt=(x,y,t,size,wt,fill,anchor)=>`<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" text-anchor="${anchor}" dominant-baseline="central" font-size="${size}" font-weight="${wt}" fill="none" stroke="#fff" stroke-width="4" stroke-linejoin="round">${t}</text><text x="${x.toFixed(1)}" y="${y.toFixed(1)}" text-anchor="${anchor}" dominant-baseline="central" font-size="${size}" font-weight="${wt}" fill="${fill}">${t}</text>`;
+  const cirkels=items.map(i=>`<circle cx="${i.x.toFixed(1)}" cy="${i.y.toFixed(1)}" r="${rad(i.n).toFixed(1)}" fill="rgba(232,148,58,.68)" stroke="#E8943A" stroke-width="2"/>`).join('');
+  const aantallen=items.filter(i=>i.n>=3).map(i=>txt(i.x,i.y,i.n,17,700,'#1C1E20','middle')).join('');
+  const labels=items.filter(i=>top5.has(i.pc)).map(i=>txt(i.x+rad(i.n)+5,i.y,i.pc,16,600,'#444','start')).join('');
+  const nietGetoond=pcs.length-items.length;
+  const noot=nietGetoond?` · ${nietGetoond} postcode${nietGetoond===1?'':'s'} niet op de kaart (niet gevonden of buiten beeld)`:'';
+  const {top,rest,aantalOverig}=postcodeTop(deelnemers,5);
+  const rows=top.map(t=>`<tr><td>${t[0]}</td><td>${t[1]}</td></tr>`).join('')+(aantalOverig?`<tr style="color:#aaa;"><td colspan="2">+ ${aantalOverig} overige postcodes (${rest})</td></tr>`:'');
+  return `<div class="two-col loc-two-col">
+    <div><div class="mk-box" style="aspect-ratio:${W}/${H};">${tiles}<svg class="mk-svg" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">${cirkels}${aantallen}${labels}</svg></div>
+    <div class="map-caption">Cirkelgrootte = aantal deelnemers per postcode (viercijferig)${noot} · Kaart: BRT Achtergrondkaart © Kadaster (PDOK, CC BY 4.0)</div></div>
     <div><table class="pc-table">${rows}</table></div>
   </div>`;
 }
@@ -1441,7 +1496,13 @@ function gemeenteStats(){
   const vrijwilligers=[...new Set((db.wsVrijw||[]).map(k=>k.vId))].length;
   return {alleWs,N,cijAll,gem,pctZekerder,orgIngevuld,orgGoedTel,pctOrgGoed,eigenIngevuld,eigenGoedTel,pctEigenGoed,cijWsAantal,missendeWs,missendeDagbesteding,missendeOverig,missendeDelen,totWs,totD,beid,alleenD1,alleenD2,bereikt,pctBeid,pctD1,pctD2,dag1Totaal,dag2Totaal,pctD1MetBeide,pctD2MetBeide,lft,app,alleQuotes,vrijwilligers};
 }
-function printGemeenteEvaluatie(){
+async function printGemeenteEvaluatie(){
+  // venster synchroon openen (popup-blokkade), daarna pas de kaart opbouwen
+  const w=window.open('','_blank');
+  if(!w){ alert('Pop-up geblokkeerd — sta pop-ups toe voor deze pagina en probeer opnieuw.'); return; }
+  w.document.write('<p style="font:14px sans-serif;padding:24px;color:#555;">Rapport wordt opgebouwd… (kaart laden)</p>');
+  let kaartHtml;
+  try{ kaartHtml=await locatieKaartHtmlAsync(db.deelnemers); }catch(e){ kaartHtml=locatieKaartHtml(db.deelnemers); }
   const S=gemeenteStats();
   const alleWs=S.alleWs;
   const cards=alleWs.map(w=>{
@@ -1487,11 +1548,15 @@ function printGemeenteEvaluatie(){
     </div></div>
     <div class="section"><div class="sec-label">Per sessie</div>${cards}</div>
     <div style="font-size:9pt;color:#777;">"n.v.t." = deelnemers konden niet evalueren (reden bij sessie vermeld). "–" = nog geen evaluatie ingevoerd. Sessies zonder feedback (geen deelnemer-, organisatie- of eigen evaluatie) tellen niet mee in de percentages hierboven. Organisatie en St. Mens Centraal &amp; Rob Bezemer Photography beantwoorden elk dezelfde twee vragen: samenwerking en aansluiting doelgroep.</div>
-    <div class="section" style="margin-top:8mm;"><div class="sec-label teal">Locatieverdeling</div>${locatieKaartHtml(db.deelnemers)}</div>
+    <div class="section" style="margin-top:8mm;"><div class="sec-label teal">Locatieverdeling</div>${kaartHtml}</div>
     <div class="section"><div class="sec-label teal">Wat deelnemers het meest leerden</div>${quotes}</div>
     </div><div class="footer"><div class="footer-txt">Samen Digitaal Sterk · Rotterdam 2026</div><div class="footer-txt">Evaluatie · Gemeente Rotterdam</div></div><div class="bar" style="margin-top:2mm;"></div></div>`;
   const DOC=`<!DOCTYPE html><html lang="nl"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Evaluatie Gemeente</title><style>${EVAL_RAPPORT_CSS}${EVAL_COMPACT}${EVAL_MOBIEL}</style></head><body>${page}</body></html>`;
-  const w=window.open('','_blank'); w.document.write(DOC); w.document.close(); w.focus(); setTimeout(()=>{ if(!w.matchMedia('(max-width:700px)').matches) w.print(); },700);
+  w.document.open(); w.document.write(DOC); w.document.close(); w.focus();
+  // printen pas als alle (kaart)tegels binnen zijn (max 8 s)
+  const klaar=Promise.all([...w.document.images].map(im=>im.complete?1:new Promise(r=>{ im.onload=im.onerror=r; })));
+  await Promise.race([klaar,new Promise(r=>setTimeout(r,8000))]);
+  setTimeout(()=>{ if(!w.closed && !w.matchMedia('(max-width:700px)').matches) w.print(); },500);
 }
 
 // ── EDIT DEELNEMER ──
