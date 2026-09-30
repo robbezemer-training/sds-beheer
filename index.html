@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Samen Digitaal Sterk — Beheer v8bb</title>
+<title>Samen Digitaal Sterk — Beheer v8bc</title>
 <style>
 @font-face {
   font-family: 'Bebas Neue';
@@ -139,7 +139,7 @@ input[readonly]{background:#f9f9f9;color:#888;}
     <div style="font-size:40px;margin-bottom:8px;">📋</div>
     <div style="font-size:18px;font-weight:700;color:#1C1E20;margin-bottom:4px;">Samen Digitaal Sterk</div>
     <div style="font-size:12px;color:#888;margin-bottom:2px;">Rotterdam 2026</div>
-    <div style="font-size:10px;color:#bbb;margin-bottom:22px;">v8bb</div>
+    <div style="font-size:10px;color:#bbb;margin-bottom:22px;">v8bc</div>
     <input type="password" id="login-pin" placeholder="Toegangscode" maxlength="6"
       style="text-align:center;letter-spacing:6px;font-size:20px;width:100%;padding:12px;border:2px solid #ddd;border-radius:10px;outline:none;margin-bottom:12px;"
       onkeydown="if(event.key==='Enter') doLogin()"
@@ -153,7 +153,7 @@ input[readonly]{background:#f9f9f9;color:#888;}
   <div class="topbar-logo">📋</div>
   <div>
     <div style="font-size:15px;font-weight:600;">Samen Digitaal Sterk</div>
-    <div style="font-size:11px;color:#aaa;">Beheer · v8bb · Rotterdam 2026</div>
+    <div style="font-size:11px;color:#aaa;">Beheer · v8bc · Rotterdam 2026</div>
   </div>
   <div style="margin-left:auto;display:flex;align-items:center;gap:12px;">
     <span id="rol-badge" style="display:none;font-size:11px;color:#aaa;"></span>
@@ -306,7 +306,13 @@ input[readonly]{background:#f9f9f9;color:#888;}
   </div>
   <div id="inst-content" style="display:none;">
     <div class="card">
-      <div class="card-title">🔗 Google Sheets koppeling</div>
+      <div class="card-title">☁ Cloud (Supabase)</div>
+      <div id="sb-status" style="font-size:12.5px;color:#666;margin-bottom:8px;"></div>
+      <div id="sb-acties" style="display:flex;gap:10px;flex-wrap:wrap;"></div>
+      <div style="font-size:11px;color:#999;margin-top:8px;">Synchroniseert automatisch per record na elk opslaan en bij het opstarten. Vervangt nooit je hele database; bij veel verwijderingen vraagt het eerst bevestiging. Dagelijks komt er ook een momentopname in de cloud.</div>
+    </div>
+    <div class="card">
+      <div class="card-title">🔗 Google Sheets koppeling (alleen handmatig)</div>
       <div class="form-row">
         <div>
           <label>Apps Script URL</label>
@@ -467,7 +473,7 @@ function checkPin() {
   if(document.getElementById('pin-input').value==='3162'){
     document.getElementById('inst-lock').style.display='none';
     document.getElementById('inst-content').style.display='block';
-    document.getElementById('sheets-url').value=getSheetUrl();
+    document.getElementById('sheets-url').value=getSheetUrl(); sbRenderStatus();
   } else { document.getElementById('pin-err').textContent='Onjuiste pincode.'; document.getElementById('pin-input').value=''; }
 }
 
@@ -483,6 +489,7 @@ function save() {
     const el=document.getElementById('save-indicator');
     el.textContent='✓ '+new Date().toLocaleTimeString('nl-NL',{hour:'2-digit',minute:'2-digit'});
     setTimeout(()=>el.textContent='',3000);
+    sbAfterSave();
   }catch(e){}
 }
 function getSheetUrl(){ return localStorage.getItem('sds_sheets_url')||SHEETS_URL_HARDCODED; }
@@ -492,13 +499,166 @@ function saveSheetUrl(){ localStorage.setItem('sds_sheets_url',document.getEleme
 function setSyncBadge(state,tekst){ const el=document.getElementById('sync-badge'); el.style.display='inline-flex'; el.className='sync-status '+state; el.textContent=tekst; if(state==='ok') setTimeout(()=>el.style.display='none',4000); }
 function setSyncLog(msg){ const el=document.getElementById('sync-log'); if(el) el.textContent=msg; }
 
-async function syncVanAuto() {
-  const url=getSheetUrl(); if(!url) return;
-  try{
-    const resp=await fetch(url+'?action=get'); const result=await resp.json();
-    if(result.ok&&result.data){ db=result.data; ensureSchema(); save(); render(); setSyncBadge('ok','✓ Data opgehaald'); }
-  }catch(e){}
+// ── CLOUD-SYNC (Supabase) — v8bc ──
+// Per record, drieweg-samenvoegen. Vervangt NOOIT de hele database; lokale data blijft altijd bestaan.
+const SB_URL='https://zbyhaulivbkzyijhcbpw.supabase.co';
+const SB_KEY='sb_publishable_ssebpIi_lzGp9plyTH5Yug_Vr5M3hIK';
+const SB_KINDS=['organisaties','workshops','deelnemers','vrijwilligers','evaluaties','wsVrijw'];
+const SB_META=['eigenAlgemeen','pcCache','_migDeelnAdres'];
+let sbBusy=false, sbTimer=null, sbApplying=false;
+function sbState(){ try{ const s=JSON.parse(localStorage.getItem('sds_sb_state')); if(s&&s.base) return s; }catch(e){} return {base:{},mod:{},last:{},synced:false,snapDate:'',lastSync:''}; }
+function sbSaveState(s){ try{ localStorage.setItem('sds_sb_state',JSON.stringify(s)); }catch(e){} }
+function sbSession(){ try{ return JSON.parse(localStorage.getItem('sds_sb_session')); }catch(e){ return null; } }
+function sbSetSession(s){ try{ if(s) localStorage.setItem('sds_sb_session',JSON.stringify(s)); else localStorage.removeItem('sds_sb_session'); }catch(e){} }
+function sbReset(){ try{ localStorage.removeItem('sds_sb_state'); }catch(e){} }
+function sbStable(v){ if(v===null||typeof v!=='object') return JSON.stringify(v); if(Array.isArray(v)) return '['+v.map(sbStable).join(',')+']'; return '{'+Object.keys(v).sort().map(k=>JSON.stringify(k)+':'+sbStable(v[k])).join(',')+'}'; }
+function sbHash(v){ const s=sbStable(v===undefined?null:v); let h1=0xdeadbeef,h2=0x41c6ce57; for(let i=0;i<s.length;i++){ const c=s.charCodeAt(i); h1=Math.imul(h1^c,2654435761); h2=Math.imul(h2^c,1597334677); } h1=Math.imul(h1^(h1>>>16),2246822507)^Math.imul(h2^(h2>>>13),3266489909); h2=Math.imul(h2^(h2>>>16),2246822507)^Math.imul(h1^(h1>>>13),3266489909); return (4294967296*(2097151&h2)+(h1>>>0)).toString(36)+s.length.toString(36); }
+function sbRid(kind,r){ return kind==='wsVrijw'?(r.wsId+'_'+r.vId):String(r.id); }
+function sbLocalMap(){ const m={}; SB_KINDS.forEach(k=>(db[k]||[]).forEach(r=>{ if(r&&(k==='wsVrijw'||r.id!=null)) m[k+'|'+sbRid(k,r)]=r; })); SB_META.forEach(k=>{ if(db[k]!==undefined) m['meta|'+k]=db[k]; }); return m; }
+function sbApply(key,val){
+  const i0=key.indexOf('|'), kind=key.slice(0,i0), rid=key.slice(i0+1);
+  if(kind==='meta'){ if(val===null) delete db[rid]; else db[rid]=val; return; }
+  const arr=db[kind]||(db[kind]=[]); const i=arr.findIndex(r=>sbRid(kind,r)===rid);
+  if(val===null){ if(i>=0) arr.splice(i,1); } else if(i>=0) arr[i]=val; else arr.push(val);
 }
+function sbTrack(st){
+  const L=sbLocalMap(), now=Date.now(); st.last=st.last||{}; st.mod=st.mod||{};
+  for(const k in L){ const h=sbHash(L[k]); if(st.last[k]!==h){ st.last[k]=h; st.mod[k]=now; } }
+  for(const k in st.last){ if(!(k in L)){ delete st.last[k]; st.mod[k]=now; } }
+}
+async function sbAuth(pad,body){
+  const r=await fetch(SB_URL+'/auth/v1/'+pad,{method:'POST',headers:{apikey:SB_KEY,'Content-Type':'application/json'},body:JSON.stringify(body)});
+  const j=await r.json().catch(()=>({}));
+  if(!r.ok) throw new Error(j.error_description||j.msg||j.message||('HTTP '+r.status));
+  return j;
+}
+function sbSessieUit(j,email){ return {access_token:j.access_token,refresh_token:j.refresh_token,expires_at:j.expires_at||Math.floor(Date.now()/1000)+(j.expires_in||3600),email:(j.user&&j.user.email)||email}; }
+async function sbLogin(email,pw){ const j=await sbAuth('token?grant_type=password',{email:email,password:pw}); sbSetSession(sbSessieUit(j,email)); }
+async function sbRefresh(s){ const j=await sbAuth('token?grant_type=refresh_token',{refresh_token:s.refresh_token}); const n=sbSessieUit(j,s.email); sbSetSession(n); return n; }
+async function sbSignup(email,pw){ const j=await sbAuth('signup',{email:email,password:pw}); if(j.access_token){ sbSetSession(sbSessieUit(j,email)); return 'ingelogd'; } return 'bevestig'; }
+async function sbFetch(pad,opt){
+  opt=opt||{}; let s=sbSession(); if(!s) throw new Error('niet-ingelogd');
+  if(s.expires_at&&Date.now()/1000>s.expires_at-60){ try{ s=await sbRefresh(s); }catch(e){ sbSetSession(null); throw new Error('niet-ingelogd'); } }
+  const maak=tok=>fetch(SB_URL+pad,{method:opt.method||'GET',body:opt.body,headers:Object.assign({apikey:SB_KEY,Authorization:'Bearer '+tok,'Content-Type':'application/json'},opt.headers||{})});
+  let r=await maak(s.access_token);
+  if(r.status===401){ try{ s=await sbRefresh(s); }catch(e){ sbSetSession(null); throw new Error('niet-ingelogd'); } r=await maak(s.access_token); }
+  if(!r.ok){ const t=await r.text().catch(()=>''); throw new Error('Cloud '+r.status+(t?': '+t.slice(0,140):'')); }
+  return r;
+}
+async function sbGetAll(tabel,select,order){
+  let uit=[],van=0;
+  for(;;){ const r=await sbFetch('/rest/v1/'+tabel+'?select='+select+'&order='+order,{headers:{Range:van+'-'+(van+999),'Range-Unit':'items'}}); const a=await r.json(); uit=uit.concat(a); if(a.length<1000) break; van+=1000; }
+  return uit;
+}
+async function sbUpsert(tabel,rijen,conflict){
+  for(let i=0;i<rijen.length;i+=200){ await sbFetch('/rest/v1/'+tabel+'?on_conflict='+conflict,{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify(rijen.slice(i,i+200))}); }
+}
+async function sbSync(opt){
+  opt=opt||{};
+  if(sbBusy||!sbSession()) return null; sbBusy=true;
+  try{
+    setSyncBadge('syncing','☁ Synchroniseren…');
+    const st=sbState(); sbTrack(st);
+    const remRec=await sbGetAll('sds_records','kind,rid,data,deleted,updated_at','kind,rid');
+    const remMeta=await sbGetAll('sds_meta','key,value,updated_at','key');
+    const R={};
+    remRec.forEach(x=>{ R[x.kind+'|'+x.rid]={h:x.deleted?null:sbHash(x.data),data:x.deleted?null:x.data,t:Date.parse(x.updated_at)}; });
+    remMeta.forEach(x=>{ R['meta|'+x.key]={h:sbHash(x.value),data:x.value,t:Date.parse(x.updated_at)}; });
+    const remoteLeeg=!remRec.length&&!remMeta.length;
+    const L=sbLocalMap(), Lh={}; for(const k in L) Lh[k]=sbHash(L[k]);
+    const keys=new Set(Object.keys(L).concat(Object.keys(R),Object.keys(st.base)));
+    const plan={naarLokaal:[],naarCloud:[],conflicten:0,lokaalWeg:0,cloudWeg:0};
+    keys.forEach(k=>{
+      const lh=(k in Lh)?Lh[k]:null, rh=R[k]?R[k].h:null, bh=(k in st.base)?st.base[k]:null;
+      if(lh===rh){ if(lh===null) delete st.base[k]; else st.base[k]=lh; return; }
+      let actie;
+      if(lh===bh) actie='remote';
+      else if(rh===bh) actie='local';
+      else{ plan.conflicten++; const lt=st.mod[k]||Infinity, rt=R[k]?R[k].t:0; actie=(!st.synced&&!remoteLeeg)?'remote':(lt>=rt?'local':'remote'); }
+      if(actie==='remote'){ plan.naarLokaal.push(k); if(rh===null&&lh!==null) plan.lokaalWeg++; }
+      else{ plan.naarCloud.push(k); if(lh===null&&rh!==null) plan.cloudWeg++; }
+    });
+    if((plan.lokaalWeg+plan.cloudWeg)>5 && !confirm('Deze synchronisatie verwijdert '+(plan.lokaalWeg+plan.cloudWeg)+' records ('+plan.lokaalWeg+' lokaal, '+plan.cloudWeg+' in de cloud).\n\nOK = verwijderen doorvoeren.\nAnnuleren = die records terughalen (er wordt niets verwijderd).')){
+      // Annuleren: verwijderingen ongedaan maken in plaats van doorvoeren
+      const terug=[], blijf=[];
+      plan.naarCloud=plan.naarCloud.filter(k=>{ const lh=(k in Lh)?Lh[k]:null; if(lh===null&&R[k]&&R[k].h!==null){ terug.push(k); return false; } return true; });
+      plan.naarLokaal=plan.naarLokaal.filter(k=>{ const rh=R[k]?R[k].h:null; if(rh===null&&(k in Lh)){ blijf.push(k); return false; } return true; });
+      plan.naarLokaal=plan.naarLokaal.concat(terug); plan.naarCloud=plan.naarCloud.concat(blijf); plan.hersteld=terug.length+blijf.length;
+    }
+    const recUp=[], metaUp=[];
+    plan.naarCloud.forEach(k=>{
+      const lh=(k in Lh)?Lh[k]:null, i0=k.indexOf('|'), kind=k.slice(0,i0), rid=k.slice(i0+1);
+      if(kind==='meta'){ if(lh!==null) metaUp.push({key:rid,value:L[k]}); }
+      else recUp.push(lh===null?{kind:kind,rid:rid,data:null,deleted:true}:{kind:kind,rid:rid,data:L[k],deleted:false});
+    });
+    if(recUp.length) await sbUpsert('sds_records',recUp,'kind,rid');
+    if(metaUp.length) await sbUpsert('sds_meta',metaUp,'key');
+    plan.naarCloud.forEach(k=>{ const lh=(k in Lh)?Lh[k]:null; if(lh===null) delete st.base[k]; else st.base[k]=lh; });
+    if(plan.naarLokaal.length){
+      plan.naarLokaal.forEach(k=>{ const rh=R[k]?R[k].h:null; sbApply(k,rh===null?null:R[k].data); if(rh===null){ delete st.base[k]; delete st.last[k]; } else { st.base[k]=rh; st.last[k]=rh; st.mod[k]=R[k].t; } });
+      sbApplying=true; try{ ensureSchema(); save(); render(); } finally{ sbApplying=false; }
+    }
+    // dagelijkse momentopname in de cloud (vangnet)
+    const vandaag=new Date().toISOString().slice(0,10);
+    if(st.snapDate!==vandaag){ try{ await sbUpsert('sds_snapshots',[{snap_date:vandaag,payload:db}],'snap_date'); st.snapDate=vandaag; }catch(e){} }
+    st.synced=true; st.lastSync=new Date().toISOString(); sbSaveState(st);
+    const tekst='↑ '+plan.naarCloud.length+' · ↓ '+plan.naarLokaal.length+(plan.conflicten?' · '+plan.conflicten+' samengevoegd':'')+(plan.hersteld?' · '+plan.hersteld+' verwijderingen teruggedraaid':'');
+    setSyncBadge('ok','☁ Gesynchroniseerd'); setSyncLog('☁ '+new Date().toLocaleTimeString('nl-NL',{hour:'2-digit',minute:'2-digit'})+' — '+tekst); sbRenderStatus();
+    return plan;
+  }catch(e){
+    if(String(e.message)==='niet-ingelogd'){ setSyncBadge('err','☁ Niet ingelogd'); setSyncLog('Log opnieuw in op de cloud.'); }
+    else{ setSyncBadge('err','☁ Sync mislukt'); setSyncLog('Cloud-sync mislukt: '+e.message+' (lokale data is onaangetast).'); }
+    sbRenderStatus(); return null;
+  }finally{ sbBusy=false; }
+}
+function sbAfterSave(){
+  if(sbApplying||!sbSession()) return;
+  clearTimeout(sbTimer); sbTimer=setTimeout(()=>sbSync(),2500);
+}
+function sbStart(){
+  if(sbSession()) sbSync();
+  else{ setSyncBadge('err','☁ Niet ingelogd'); const b=document.getElementById('sync-badge'); if(b){ b.style.cursor='pointer'; b.onclick=sbLoginDialog; } }
+  sbRenderStatus();
+}
+function sbRenderStatus(){
+  const el=document.getElementById('sb-status'); if(!el) return;
+  const s=sbSession(), st=sbState();
+  el.innerHTML=s?('Ingelogd als <b>'+_oe(s.email||'')+'</b>'+(st.lastSync?' · laatst gesynchroniseerd '+new Date(st.lastSync).toLocaleString('nl-NL',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):' · nog niet gesynchroniseerd')):'Niet ingelogd — data staat alleen op dit apparaat.';
+  const a=document.getElementById('sb-acties'); if(a) a.innerHTML=s
+    ?'<button class="btn btn-t" onclick="sbSync()">☁ Nu synchroniseren</button><button class="btn" onclick="sbUitloggen()">Uitloggen</button>'
+    :'<button class="btn btn-t" onclick="sbLoginDialog()">☁ Inloggen</button>';
+}
+function sbUitloggen(){ sbSetSession(null); setSyncLog('Uitgelogd van de cloud; lokale data blijft bestaan.'); sbStart(); }
+function sbLoginDialog(){
+  modalType='sblogin'; modalId=null;
+  document.getElementById('modal-body').innerHTML=
+    '<div style="font-size:12px;color:#888;margin-bottom:8px;">Inloggen op de cloud (Supabase). Je lokale data blijft altijd bestaan.</div>'
+    +'<label>E-mailadres</label><input id="sb-email" type="email" value="'+((sbSession()||{}).email||'robbezemer@me.com')+'" autocomplete="username">'
+    +'<label style="margin-top:8px;">Wachtwoord</label><input id="sb-pw" type="password" autocomplete="current-password" onkeydown="if(event.key===\'Enter\') sbLoginSubmit()">'
+    +'<div style="margin-top:10px;"><button class="btn btn-sm" onclick="sbAccountMaken()">Eerste keer? Account aanmaken</button></div>'
+    +'<div id="sb-melding" style="font-size:12px;color:#c00;margin-top:8px;"></div>';
+  openModal('☁ Inloggen cloud');
+}
+async function sbLoginSubmit(){
+  const e=document.getElementById('sb-email').value.trim(), p=document.getElementById('sb-pw').value, m=document.getElementById('sb-melding');
+  if(!e||!p){ m.textContent='Vul e-mailadres en wachtwoord in.'; return; }
+  m.style.color='#888'; m.textContent='Inloggen…';
+  try{ await sbLogin(e,p); sluitModal(); const b=document.getElementById('sync-badge'); if(b) b.onclick=null; sbRenderStatus(); await sbSync(); }
+  catch(err){ m.style.color='#c00'; m.textContent=/invalid|credentials/i.test(err.message)?'E-mailadres of wachtwoord klopt niet (of het account is nog niet bevestigd).':err.message; }
+}
+async function sbAccountMaken(){
+  const e=document.getElementById('sb-email').value.trim(), p=document.getElementById('sb-pw').value, m=document.getElementById('sb-melding');
+  if(!e||p.length<8){ m.style.color='#c00'; m.textContent='Kies een wachtwoord van minimaal 8 tekens.'; return; }
+  m.style.color='#888'; m.textContent='Account aanmaken…';
+  try{
+    const r=await sbSignup(e,p);
+    if(r==='ingelogd'){ sluitModal(); sbRenderStatus(); await sbSync(); }
+    else{ m.style.color='#2a7'; m.textContent='Account aangemaakt. Het moet nog bevestigd worden; meld dat aan Claude en log daarna in.'; }
+  }catch(err){ m.style.color='#c00'; m.textContent=err.message; }
+}
+
+// Sheets wordt niet meer automatisch opgehaald (overschreef lokale data); alleen nog handmatig via de knoppen.
+async function syncVanAuto() { sbStart(); }
 async function syncNaar() {
   const url=getSheetUrl(); if(!url){ alert('Geen URL.'); return; }
   setSyncBadge('syncing','⟳ Bezig…'); setSyncLog('Data versturen…');
@@ -525,7 +685,7 @@ function importDataPrompt(){
   const inp=document.createElement('input'); inp.type='file'; inp.accept='.json';
   inp.onchange=e=>{
     const r=new FileReader();
-    r.onload=ev=>{ try{ const d=JSON.parse(ev.target.result); if(!d.workshops){alert('Ongeldig.');return;} if(!confirm('Data vervangen?'))return; db=d; ensureSchema(); save(); render(); alert('Geïmporteerd ✓'); }catch(err){alert('Fout.');} };
+    r.onload=ev=>{ try{ const d=JSON.parse(ev.target.result); if(!d.workshops){alert('Ongeldig.');return;} if(!confirm('Data vervangen?'))return; db=d; ensureSchema(); sbReset(); save(); render(); alert('Geïmporteerd ✓ (wordt samengevoegd met de cloud)'); }catch(err){alert('Fout.');} };
     r.readAsText(e.target.files[0]);
   }; inp.click();
 }
@@ -853,6 +1013,7 @@ function slaModalOp() {
   else if (modalType === 'evaluatie') slaEvaluatieOp();
   else if (modalType === 'apparaatcontrole') slaApparaatControleOp();
   else if (modalType === 'opmerkingen') sluitModal();
+  else if (modalType === 'sblogin') sbLoginSubmit();
 }
 
 function openModal(title) {
