@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Samen Digitaal Sterk — Beheer v8au</title>
+<title>Samen Digitaal Sterk — Beheer v8ax</title>
 <style>
 @font-face {
   font-family: 'Bebas Neue';
@@ -139,7 +139,7 @@ input[readonly]{background:#f9f9f9;color:#888;}
     <div style="font-size:40px;margin-bottom:8px;">📋</div>
     <div style="font-size:18px;font-weight:700;color:#1C1E20;margin-bottom:4px;">Samen Digitaal Sterk</div>
     <div style="font-size:12px;color:#888;margin-bottom:2px;">Rotterdam 2026</div>
-    <div style="font-size:10px;color:#bbb;margin-bottom:22px;">v8au</div>
+    <div style="font-size:10px;color:#bbb;margin-bottom:22px;">v8ax</div>
     <input type="password" id="login-pin" placeholder="Toegangscode" maxlength="6"
       style="text-align:center;letter-spacing:6px;font-size:20px;width:100%;padding:12px;border:2px solid #ddd;border-radius:10px;outline:none;margin-bottom:12px;"
       onkeydown="if(event.key==='Enter') doLogin()"
@@ -153,7 +153,7 @@ input[readonly]{background:#f9f9f9;color:#888;}
   <div class="topbar-logo">📋</div>
   <div>
     <div style="font-size:15px;font-weight:600;">Samen Digitaal Sterk</div>
-    <div style="font-size:11px;color:#aaa;">Beheer · v8au · Rotterdam 2026</div>
+    <div style="font-size:11px;color:#aaa;">Beheer · v8ax · Rotterdam 2026</div>
   </div>
   <div style="margin-left:auto;display:flex;align-items:center;gap:12px;">
     <span id="rol-badge" style="display:none;font-size:11px;color:#aaa;"></span>
@@ -851,6 +851,7 @@ function slaModalOp() {
   else if (modalType === 'vrijwilliger') slaVrijwilligerOp();
   else if (modalType === 'evaluatie') slaEvaluatieOp();
   else if (modalType === 'apparaatcontrole') slaApparaatControleOp();
+  else if (modalType === 'opmerkingen') sluitModal();
 }
 
 function openModal(title) {
@@ -971,7 +972,7 @@ function evalAggr(wsId){
   const aanbTot=aanb['Nee']+aanb['Misschien']+aanb['Ja']+aanb['Zeker!'];
   const aanbPos=aanb['Ja']+aanb['Zeker!'];
   const meerTot=meer['Ja']+meer['Nee']+meer['Weet ik niet'];
-  const geleerd=recs.map(r=>(r.geleerd||'').trim()).filter(Boolean);
+  const geleerd=recs.slice().sort((a,b)=>(b.ster?1:0)-(a.ster?1:0)).map(r=>(r.geleerd||'').trim()).filter(Boolean);
   const onderwerpen=recs.map(r=>(r.onderwerp||'').trim()).filter(Boolean);
   const opmerkingen=recs.map(r=>(r.opmerkingen||'').trim()).filter(Boolean);
   const org=db.evaluaties.find(e=>e.wsId===wsId&&e.type==='o')||null;
@@ -979,6 +980,190 @@ function evalAggr(wsId){
   return {n:recs.length,recs,cijfers,gem,dist,meer,meerTot,aanb,aanbTot,aanbPos,vertrouwen,vertrouwenTot,vertrouwenPos,geleerd,onderwerpen,opmerkingen,org,eigen};
 }
 
+// ── OPMERKINGEN PER WORKSHOP (v8av) — overzicht, ⭐ voor rapportcitaten, kopiëren voor analyse ──
+const _oe=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
+function _opmData(){
+  ensureSchema();
+  return [...db.workshops].sort((a,b)=>(a.dag1||'')>(b.dag1||'')?1:-1).map(w=>{
+    const D=db.evaluaties.filter(e=>e.wsId===w.id&&e.type==='d');
+    const pick=f=>D.filter(r=>(r[f]||'').trim()).map(r=>({r,t:r[f].trim()}));
+    return {w, n:D.length, geleerd:pick('geleerd'), wens:pick('onderwerp'), opm:pick('opmerkingen'),
+      org:db.evaluaties.find(e=>e.wsId===w.id&&e.type==='o')||null,
+      eigen:db.evaluaties.find(e=>e.wsId===w.id&&e.type==='e')||null};
+  }).filter(g=>g.geleerd.length||g.wens.length||g.opm.length||(g.org&&((g.org.opmerkingen||'').trim()||(g.org.beter||'').trim()))||(g.eigen&&((g.eigen.opmerkingen||'').trim()||(g.eigen.beter||'').trim())));
+}
+function opmerkingenOverzicht(){
+  const G=_opmData();
+  modalType='opmerkingen'; modalId=null;
+  const kop=t=>'<div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#E8943A;margin:8px 0 3px;">'+t+'</div>';
+  const koptl=t=>'<div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#4DA99A;margin:8px 0 3px;">'+t+'</div>';
+  const cij=r=>r.cijfer?' <span style="color:#aaa;font-size:11px;">['+r.cijfer+']</span>':'';
+  const item=(inhoud,ster)=>'<div class="opm-item" data-ster="'+(ster?1:0)+'" style="display:flex;gap:7px;padding:4px 0;border-bottom:1px solid #f3f3f3;font-size:12.5px;line-height:1.4;">'+inhoud+'</div>';
+  const punt='<span style="color:#ccc;flex-shrink:0;">•</span>';
+  let totaal=0;
+  const blokken=G.map(g=>{
+    const w=g.w;
+    let h='<div class="opm-ws" style="margin-bottom:14px;"><div style="font-weight:700;font-size:13.5px;border-bottom:2px solid #1C1E20;padding-bottom:2px;">'+_oe(w.org)+(w.wijk?' — '+_oe(w.wijk):'')+' <span style="font-weight:400;color:#888;font-size:11px;">· '+fmtDateShort(w.dag1)+' · '+g.n+' formulieren</span></div>';
+    if(g.geleerd.length){ h+=kop('Wat geleerd'); h+=g.geleerd.map(x=>{ totaal++; return item('<button id="st-'+x.r.id+'" onclick="toggleSter('+x.r.id+')" title="Kies als citaat voor het rapport" style="border:none;background:none;font-size:16px;line-height:1;padding:0;cursor:pointer;flex-shrink:0;">'+(x.r.ster?'⭐':'☆')+'</button><div>'+_oe(x.t)+cij(x.r)+'</div>',x.r.ster); }).join(''); }
+    if(g.wens.length){ h+=kop('Gewenst onderwerp / vervolg'); h+=g.wens.map(x=>{ totaal++; return item(punt+'<div>'+_oe(x.t)+cij(x.r)+'</div>',false); }).join(''); }
+    if(g.opm.length){ h+=kop('Overige opmerkingen'); h+=g.opm.map(x=>{ totaal++; return item(punt+'<div>'+_oe(x.t)+cij(x.r)+'</div>',false); }).join(''); }
+    const orgTxt=(o,label)=>{ if(!o) return ''; let s=''; const a=(o.opmerkingen||'').trim(), b=(o.beter||'').trim();
+      if(a){ totaal++; s+=item(punt+'<div>'+_oe(a)+'</div>',false); }
+      if(b){ totaal++; s+=item(punt+'<div><span style="color:#888;">Wat kan beter:</span> '+_oe(b)+'</div>',false); }
+      return s?koptl(label)+s:''; };
+    h+=orgTxt(g.org,'Organisatie'+(g.org&&g.org.contactpersoon?' — '+_oe(g.org.contactpersoon):''));
+    h+=orgTxt(g.eigen,'Eigen evaluatie (SMC &amp; RB Photography)');
+    return h+'</div>';
+  }).join('');
+  document.getElementById('modal-body').innerHTML=
+    '<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:8px;">'
+    +'<input id="opm-zoek" placeholder="Zoek in opmerkingen…" oninput="opmFilter()" style="flex:1;min-width:140px;">'
+    +'<label style="font-weight:400;font-size:12px;display:inline-flex;align-items:center;gap:4px;margin:0;"><input type="checkbox" id="opm-ster" onchange="opmFilter()" style="width:auto;"> alleen ⭐</label></div>'
+    +'<div style="display:flex;gap:8px;align-items:center;margin-bottom:10px;flex-wrap:wrap;"><button class="btn btn-sm" id="opm-kopieer" onclick="opmKopieer()">📋 Kopieer alles</button>'
+    +'<span style="font-size:11px;color:#888;">'+totaal+' opmerkingen in '+G.length+' workshops · ⭐ = citaat in rapport (bij "Wat het meest geleerd")</span></div>'
+    +'<div id="opm-lijst">'+(blokken||'<div style="color:#aaa;font-size:12px;">Nog geen opmerkingen ingevoerd.</div>')+'</div>';
+  openModal('Opmerkingen per workshop');
+}
+function opmFilter(){
+  const q=((document.getElementById('opm-zoek')||{}).value||'').trim().toLowerCase();
+  const alleenSter=!!(document.getElementById('opm-ster')&&document.getElementById('opm-ster').checked);
+  document.querySelectorAll('#opm-lijst .opm-ws').forEach(g=>{
+    let zicht=0;
+    g.querySelectorAll('.opm-item').forEach(it=>{
+      const ok=(!q||it.textContent.toLowerCase().includes(q))&&(!alleenSter||it.dataset.ster==='1');
+      it.style.display=ok?'':'none'; if(ok) zicht++;
+    });
+    g.style.display=zicht?'':'none';
+  });
+}
+function toggleSter(id){
+  const r=db.evaluaties.find(e=>e.id===id); if(!r) return;
+  r.ster=!r.ster; save();
+  const b=document.getElementById('st-'+id);
+  if(b){ b.textContent=r.ster?'⭐':'☆'; const it=b.closest('.opm-item'); if(it) it.dataset.ster=r.ster?'1':'0'; }
+}
+function opmKopieer(){
+  const G=_opmData(); const L=[];
+  L.push('SDS Rotterdam 2026 — opmerkingen per workshop (geen namen van deelnemers)');
+  G.forEach(g=>{
+    const w=g.w;
+    L.push('','## '+w.org+(w.wijk?' — '+w.wijk:'')+' · '+fmtDateShort(w.dag1)+' · '+g.n+' formulieren');
+    const regels=(titel,arr,f)=>{ if(arr.length){ L.push(titel+':'); arr.forEach(x=>L.push('- '+(f?f(x):x.t).replace(/\s*\n\s*/g,' / '))); } };
+    regels('Wat geleerd',g.geleerd,x=>(x.r.ster?'⭐ ':'')+x.t+(x.r.cijfer?' ['+x.r.cijfer+']':''));
+    regels('Gewenst onderwerp / vervolg',g.wens,x=>x.t+(x.r.cijfer?' ['+x.r.cijfer+']':''));
+    regels('Overige opmerkingen',g.opm,x=>x.t+(x.r.cijfer?' ['+x.r.cijfer+']':''));
+    [[g.org,'Organisatie'],[g.eigen,'Eigen evaluatie']].forEach(p=>{ const o=p[0]; if(!o) return;
+      const a=(o.opmerkingen||'').trim(), b=(o.beter||'').trim();
+      if(a||b){ L.push(p[1]+':'); if(a) L.push('- '+a.replace(/\s*\n\s*/g,' / ')); if(b) L.push('- Wat kan beter: '+b.replace(/\s*\n\s*/g,' / ')); } });
+  });
+  const tekst=L.join('\n');
+  const klaar=()=>{ const b=document.getElementById('opm-kopieer'); if(b){ b.textContent='✓ Gekopieerd'; setTimeout(()=>{ b.textContent='📋 Kopieer alles'; },2500); } };
+  const terug=()=>{ const ta=document.createElement('textarea'); ta.value=tekst; ta.style.cssText='position:fixed;left:-9999px;'; document.body.appendChild(ta); ta.select(); try{ document.execCommand('copy'); klaar(); }catch(e){ alert('Kopiëren mislukt.'); } ta.remove(); };
+  if(navigator.clipboard&&navigator.clipboard.writeText) navigator.clipboard.writeText(tekst).then(klaar,terug); else terug();
+}
+// ── THEMA'S UIT DE FEEDBACK (v8aw) — trefwoordgroepen op de vrije tekst; alleen deelnemersfeedback ──
+const THEMA_EFFECT=[
+ {t:"Foto's maken en bewerken",test:s=>/foto|album|camera|fotografie|licht\b|uitsnij|bewerk/i.test(s)},
+ {t:'AI en ChatGPT',test:s=>/\bai\b|chat ?gpt|\bgpt\b/i.test(s)},
+ {t:'Smartphone bedienen',test:s=>/smartphone|smatphone|telefoon|toestel|i-?pad|i-?phone|bediening|mobiele/i.test(s)},
+ {t:'Veilig online',test:s=>/veilig|beschermen|phishing|spam|alert|slotje|eerst lezen/i.test(s)},
+ {t:'Zelfvertrouwen en durven',test:s=>/onzeker|\bzelf\b|durven|experiment|uitproberen/i.test(s)}
+];
+const THEMA_WENS=[
+ {t:'Vervolg, herhaling, langer',test:s=>/herhal|vaker|vervolg|langere|\b4x\b|verdieping|dieper|diepgang|om de zoveel|meer nuttige onderwerpen/i.test(s)},
+ {t:'Meer fotografie en bewerken',test:s=>/foto|portret/i.test(s)},
+ {t:'Telefoon en internet breder',test:s=>/smartphone|telefoon|whatsapp|computer|digitale? uitleg/i.test(s)||(/internet/i.test(s)&&!/veilig/i.test(s))},
+ {t:'Meer AI',test:s=>/\bai\b|chat ?gpt/i.test(s)},
+ {t:'Veiligheid op internet',test:s=>/veilig/i.test(s)}
+];
+function _wensDelen(r){
+  const d=[]; const o=(r.onderwerp||'').trim(); if(o) d.push(o);
+  const p=(r.opmerkingen||'').trim();
+  if(p&&!/^\s*leuk/i.test(p)&&/graag|vaker|herhal|langere|nog meer|\bmeer (over|uitleg|info|nuttige)/i.test(p)) d.push(p);
+  return d;
+}
+function themaAnalyse(recs){
+  const ef=THEMA_EFFECT.map(t=>({t:t.t,n:0,q:[]})), we=THEMA_WENS.map(t=>({t:t.t,n:0,q:[]}));
+  let nG=0,nW=0;
+  const rs=recs.slice().sort((a,b)=>(b.ster?1:0)-(a.ster?1:0));
+  rs.forEach(r=>{
+    const g=(r.geleerd||'').trim();
+    if(g){
+      nG++;
+      const frag=g.split(/\n+|\.\s+/).map(x=>x.trim()).filter(Boolean);
+      THEMA_EFFECT.forEach((t,i)=>{ if(t.test(g)){ ef[i].n++; ef[i].q.push({t:frag.find(f=>t.test(f))||g,ster:!!r.ster}); } });
+    }
+    const delen=_wensDelen(r);
+    if(delen.length){
+      let hit=false;
+      THEMA_WENS.forEach((t,i)=>{ const m=delen.find(x=>t.test(x)); if(m){ hit=true; we[i].n++; we[i].q.push({t:m,ster:false}); } });
+      if(hit) nW++;
+    }
+  });
+  const fin=a=>a.filter(x=>x.n>0).sort((a,b)=>b.n-a.n);
+  return {nG,nW,effect:fin(ef),wens:fin(we)};
+}
+function _themaQuote(o){
+  const q=o.q.slice().sort((a,b)=>(b.ster?1:0)-(a.ster?1:0)||((a.t.length>=12&&a.t.length<=90)?0:1)-((b.t.length>=12&&b.t.length<=90)?0:1));
+  return q.length?q[0].t:'';
+}
+function themaBars(list,cls,metCitaat){
+  if(!list.length) return '<div style="font-size:9.5pt;color:#aaa;margin-bottom:2mm;">Nog geen thema\'s.</div>';
+  const max=Math.max.apply(null,list.map(x=>x.n));
+  return list.map(x=>{
+    const c=metCitaat?_themaQuote(x):'';
+    return '<div style="margin-bottom:1.6mm;"><div class="brow" style="margin-bottom:0.4mm;"><div class="blab" style="width:52mm;">'+x.t+'</div><div class="btrack"><div class="bfill '+cls+'" style="width:'+Math.round(x.n/max*100)+'%;-webkit-print-color-adjust:exact;print-color-adjust:exact;"></div></div><div class="bval">'+x.n+'</div></div>'
+      +(c?'<div style="font-size:8.5pt;color:#777;font-style:italic;padding-left:55mm;">\u201c'+c.replace(/</g,'&lt;')+'\u201d</div>':'')+'</div>';
+  }).join('');
+}
+function themaBlokWs(recs){
+  const T=themaAnalyse(recs);
+  if(!T.effect.length&&!T.wens.length) return '';
+  return '<div class="section"><div class="sec-label">Thema\u2019s \u2014 wat deelnemers leerden</div>'+themaBars(T.effect,'o',false)
+    +'<div class="sec-label teal" style="margin-top:2mm;">Thema\u2019s \u2014 wat men nog wil</div>'+themaBars(T.wens,'t',false)
+    +'<div style="font-size:8pt;color:#999;">Op basis van '+T.nG+' antwoorden op \u201cwat geleerd\u201d en '+T.nW+' wensen. E\u00e9n antwoord kan meerdere thema\u2019s raken.</div></div>';
+}
+function themaHeatmapHtml(){
+  const ws=[...db.workshops].sort((a,b)=>(a.dag1||'')>(b.dag1||'')?1:-1).map(w=>({w,recs:db.evaluaties.filter(e=>e.wsId===w.id&&e.type==='d'&&(e.geleerd||'').trim())})).filter(x=>x.recs.length);
+  if(!ws.length) return '';
+  const kol='34mm repeat('+ws.length+',minmax(0,1fr))';
+  let h='<div style="display:grid;grid-template-columns:'+kol+';gap:1mm;align-items:stretch;">';
+  h+='<div></div>'+ws.map(x=>'<div style="text-align:center;font-size:7pt;line-height:1.25;color:#555;padding-bottom:1mm;word-break:break-word;">'+x.w.org+'<br>'+fmtDateShort(x.w.dag1)+'<br><span style="color:#999;">n='+x.recs.length+'</span></div>').join('');
+  THEMA_EFFECT.forEach(t=>{
+    h+='<div style="font-size:9pt;display:flex;align-items:center;">'+t.t+'</div>';
+    ws.forEach(x=>{
+      const v=x.recs.filter(r=>t.test((r.geleerd||'').trim())).length, sh=v/x.recs.length;
+      h+='<div style="height:8mm;border-radius:1.5mm;display:flex;align-items:center;justify-content:center;font-size:10pt;font-weight:700;-webkit-print-color-adjust:exact;print-color-adjust:exact;background:'+(v?'rgba(232,148,58,'+(0.15+sh*0.6).toFixed(2)+')':'#f4f4f4')+';color:'+(v?'#1C1E20':'#c8c8c8')+';">'+(v||'\u00b7')+'</div>';
+    });
+  });
+  return h+'</div><div style="font-size:8pt;color:#999;margin-top:1.5mm;">Aantal antwoorden per workshop met dit thema; kleur = aandeel. Kleine aantallen, dus indicatief.</div>';
+}
+function themaSignalenHtml(){
+  const out=[];
+  [...db.workshops].sort((a,b)=>(a.dag1||'')>(b.dag1||'')?1:-1).forEach(w=>{
+    db.evaluaties.filter(e=>e.wsId===w.id&&(e.type==='o'||e.type==='e')).forEach(e=>{
+      const kop=w.org+(w.wijk?' \u2014 '+w.wijk:'')+' \u00b7 '+fmtDateShort(w.dag1)+' \u00b7 '+(e.type==='o'?'Organisatie':'Eigen evaluatie');
+      const a=(e.opmerkingen||'').trim(), b=(e.beter||'').trim();
+      const geen=s=>/^geen (op|aan)/i.test(s);
+      const tekst=[a&&!geen(a)?_oe(a):'', b&&!geen(b)?'<span style="color:#888;">Wat kan beter:</span> '+_oe(b):''].filter(Boolean).join('<br>');
+      if(tekst) out.push('<div class="qbox"><div style="font-size:7.5pt;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#E8943A;margin-bottom:0.8mm;">'+kop+'</div>'+tekst+'</div>');
+    });
+  });
+  return out.join('')||'<div style="font-size:10pt;color:#aaa;">\u2014</div>';
+}
+function gemeenteThemaPage(){
+  const recs=(db.evaluaties||[]).filter(e=>e.type==='d');
+  const T=themaAnalyse(recs);
+  if(!T.effect.length&&!T.wens.length) return '';
+  return '<div class="page">'+evalHEAD()+'<div class="body evx">'+evalTB('Thema\u2019s uit de feedback')
+    +'<div class="ws-sub">Alle workshops \u00b7 opmerkingen van deelnemers en organisaties</div>'
+    +'<div class="section"><div class="sec-label">Wat deelnemers leerden</div>'+themaBars(T.effect,'o',true)+'</div>'
+    +'<div class="section"><div class="sec-label teal">Wat men nog wil</div>'+themaBars(T.wens,'t',true)+'</div>'
+    +'<div class="section"><div class="sec-label">Verloop per workshop</div>'+themaHeatmapHtml()+'</div>'
+    +'<div class="section"><div class="sec-label teal">Wat organisaties en wij signaleren</div>'+themaSignalenHtml()+'</div>'
+    +'<div style="font-size:8pt;color:#999;">Thema\u2019s zijn gegroepeerd op trefwoorden in '+T.nG+' antwoorden op \u201cwat geleerd\u201d en '+T.nW+' wensen; \u00e9\u00e9n antwoord kan meerdere thema\u2019s raken.</div>'
+    +'</div><div class="footer"><div class="footer-txt">Samen Digitaal Sterk \u00b7 Rotterdam 2026</div><div class="footer-txt">Thema\u2019s \u00b7 Gemeente Rotterdam</div></div><div class="bar" style="margin-top:2mm;"></div></div>';
+}
 function evalBullets(wsId){
   const recs=(db.evaluaties||[]).filter(e=>e.wsId===wsId&&e.type==='d');
   if(!recs.length) return '<div style="font-size:12px;color:#aaa;padding:4px 0;">Nog geen formulieren.</div>';
@@ -1200,6 +1385,8 @@ html,body { background:#e9e9e9; font-family:'Source Sans 3',Arial,sans-serif; co
 .pc-table { width:100%; border-collapse:collapse; font-size:9pt; }
 .pc-table td { padding:1.5mm 2mm; border-bottom:1px solid #f0f0f0; }
 .pc-table td:last-child { text-align:right; font-weight:700; }
+.loc-stack { break-inside:avoid; page-break-inside:avoid; }
+.pc-table .pc-h td { font-size:7.5pt; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:#888; border-bottom:1.5px solid #ddd; }
 `;
 const EVAL_COMPACT=`
 .evx .sec-label{margin-bottom:2mm;}
@@ -1334,10 +1521,11 @@ async function locatieKaartHtmlAsync(deelnemers){
   const noot=nietGetoond?` · ${nietGetoond} postcode${nietGetoond===1?'':'s'} niet op de kaart (niet gevonden of buiten beeld)`:'';
   const {top,rest,aantalOverig}=postcodeTop(deelnemers,5);
   const rows=top.map(t=>`<tr><td>${t[0]}</td><td>${t[1]}</td></tr>`).join('')+(aantalOverig?`<tr style="color:#aaa;"><td colspan="2">+ ${aantalOverig} overige postcodes (${rest})</td></tr>`:'');
-  return `<div class="two-col loc-two-col">
-    <div><div class="mk-box" style="aspect-ratio:${W}/${H};">${tiles}<svg class="mk-svg" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">${cirkels}${aantallen}${labels}</svg></div>
-    <div class="map-caption">Cirkelgrootte = aantal deelnemers per postcode (viercijferig)${noot} · Kaart: BRT Achtergrondkaart © Kadaster (PDOK, CC BY 4.0)</div></div>
-    <div><table class="pc-table">${rows}</table></div>
+  const kop='<tr class="pc-h"><td>Postcode</td><td>Deelnemers</td></tr>';
+  return `<div class="loc-stack">
+    <div class="mk-box" style="aspect-ratio:${W}/${H};">${tiles}<svg class="mk-svg" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">${cirkels}${aantallen}${labels}</svg></div>
+    <div class="map-caption">Cirkelgrootte = aantal deelnemers per postcode (viercijferig)${noot} · Kaart: BRT Achtergrondkaart © Kadaster (PDOK, CC BY 4.0)</div>
+    <table class="pc-table" style="margin-top:3mm;">${kop}${rows}</table>
   </div>`;
 }
 
@@ -1410,6 +1598,7 @@ function evalRapportPage(wsId){
       <div><div class="sec-label teal">Aanbeveling</div>${evalBars(A.aanb,['Zeker!','Ja','Misschien','Nee'],'t')}
         <div class="sec-label teal" style="margin-top:5mm;">Meer workshops?</div>${evalBars(A.meer,['Ja','Nee','Weet ik niet'],'t')}</div>
     </div></div>
+    ${themaBlokWs(A.recs)}
     <div class="section"><div class="sec-label">Wat het meest geleerd</div>${quotes}</div>` : '';
   return `<div class="page">${evalHEAD()}<div class="body evx">${evalTB('Evaluatierapport')}
     <div class="ws-sub">${orgTekst} · ${fmtDate(w.dag1)} &amp; ${fmtDate(w.dag2)}${geenEval?` <span class="tag-nvt">${w.evalNvtReden?'dagbesteding':'geen deelnemerevaluatie'}</span>`:''}</div>
@@ -1505,12 +1694,36 @@ async function maakPdfUitDoc(DOC, bestand){
       const land=el.classList.contains('land');
       const pw=land?297:210, ph=land?210:297;
       const canvas=await html2canvas(el,{scale:2.5,backgroundColor:'#ffffff',useCORS:true,logging:false,windowWidth:1240});
-      if(!pdf) pdf=new jsPDF({orientation:land?'landscape':'portrait',unit:'mm',format:'a4',compress:true});
-      else pdf.addPage('a4',land?'landscape':'portrait');
-      let bw=el.getBoundingClientRect().width*25.4/96;
-      let bh=bw*canvas.height/canvas.width;
-      const f=Math.min(1,pw/bw,ph/bh); bw*=f; bh*=f;   // nooit vergroten; te hoge pagina krimpt naar A4
-      pdf.addImage(canvas.toDataURL('image/jpeg',0.92),'JPEG',(pw-bw)/2,0,bw,bh,undefined,'FAST');
+      const pxmm=96/25.4, rect=el.getBoundingClientRect(), sc=canvas.height/rect.height;
+      const bwMm=rect.width/pxmm, totaal=rect.height, RAND=10;
+      let slices=[];
+      if(totaal/pxmm<=ph*1.04){ slices=[[0,totaal]]; }
+      else{
+        const bottoms=sel=>[...el.querySelectorAll(sel)].map(c=>c.getBoundingClientRect().bottom-rect.top).sort((a,b)=>a-b);
+        const groot=bottoms('.section,.sess-card,.stat-grid'), klein=bottoms('.brow,.qbox,.org-item,tr');
+        let start=0;
+        for(;;){
+          const usable=(start===0?ph:ph-2*RAND)*pxmm;
+          if(totaal-start<=usable+1){ slices.push([start,totaal]); break; }
+          const limit=start+usable;
+          let cut=0;
+          groot.forEach(c=>{ if(c>start+usable*0.55&&c<=limit-4) cut=c; });
+          if(!cut) klein.forEach(c=>{ if(c>start+usable*0.35&&c<=limit-4) cut=c; });
+          if(cut) cut+=4; else cut=limit;
+          slices.push([start,cut]); start=cut;
+        }
+      }
+      slices.forEach((sl,j)=>{
+        if(!pdf) pdf=new jsPDF({orientation:land?'landscape':'portrait',unit:'mm',format:'a4',compress:true});
+        else pdf.addPage('a4',land?'landscape':'portrait');
+        const sy=Math.round(sl[0]*sc), sh=Math.max(1,Math.round(sl[1]*sc)-sy);
+        const c2=document.createElement('canvas'); c2.width=canvas.width; c2.height=sh;
+        c2.getContext('2d').drawImage(canvas,0,sy,canvas.width,sh,0,0,canvas.width,sh);
+        let bw=bwMm, bh=(sl[1]-sl[0])/pxmm;
+        if(slices.length===1){ const f=Math.min(1,pw/bw,ph/bh); bw*=f; bh*=f; }
+        pdf.addImage(c2.toDataURL('image/jpeg',0.92),'JPEG',(pw-bw)/2,j===0?0:RAND,bw,bh,undefined,'FAST');
+        c2.width=c2.height=0;
+      });
       canvas.width=canvas.height=0;
     }
     const url=URL.createObjectURL(pdf.output('blob'));
@@ -1571,6 +1784,7 @@ function gemeenteStats(){
   const pctD2MetBeide=dag2Totaal?Math.round(beid/dag2Totaal*100):0;
   const lft=leeftijdBuckets(db.deelnemers), app=apparaatBuckets(db.deelnemers);
   const vrijwilligers=[...new Set((db.wsVrijw||[]).map(k=>k.vId))].length;
+  { const sterT=(db.evaluaties||[]).filter(e=>e.type==='d'&&e.ster&&(e.geleerd||'').trim()).map(e=>e.geleerd.trim()); if(sterT.length) alleQuotes=sterT.concat(alleQuotes.filter(q=>!sterT.includes(q))); }
   return {alleWs,N,cijAll,gem,pctZekerder,orgIngevuld,orgGoedTel,pctOrgGoed,eigenIngevuld,eigenGoedTel,pctEigenGoed,cijWsAantal,missendeWs,missendeDagbesteding,missendeOverig,missendeDelen,totWs,totD,beid,alleenD1,alleenD2,bereikt,pctBeid,pctD1,pctD2,dag1Totaal,dag2Totaal,pctD1MetBeide,pctD2MetBeide,lft,app,alleQuotes,vrijwilligers};
 }
 async function printGemeenteEvaluatie(){
@@ -1625,10 +1839,9 @@ async function printGemeenteEvaluatie(){
     </div></div>
     <div class="section"><div class="sec-label">Per sessie</div>${cards}</div>
     <div style="font-size:9pt;color:#777;">"n.v.t." = deelnemers konden niet evalueren (reden bij sessie vermeld). "–" = nog geen evaluatie ingevoerd. Sessies zonder feedback (geen deelnemer-, organisatie- of eigen evaluatie) tellen niet mee in de percentages hierboven. Organisatie en St. Mens Centraal &amp; Rob Bezemer Photography beantwoorden elk dezelfde twee vragen: samenwerking en aansluiting doelgroep.</div>
-    <div class="section" style="margin-top:8mm;"><div class="sec-label teal">Locatieverdeling</div>${kaartHtml}</div>
-    <div class="section"><div class="sec-label teal">Wat deelnemers het meest leerden</div>${quotes}</div>
+    <div class="section" style="margin-top:8mm;break-inside:avoid;page-break-inside:avoid;"><div class="sec-label teal">Locatieverdeling</div>${kaartHtml}</div>
     </div><div class="footer"><div class="footer-txt">Samen Digitaal Sterk · Rotterdam 2026</div><div class="footer-txt">Evaluatie · Gemeente Rotterdam</div></div><div class="bar" style="margin-top:2mm;"></div></div>`;
-  const DOC=`<!DOCTYPE html><html lang="nl"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Evaluatie Gemeente</title><style>${EVAL_RAPPORT_CSS}${EVAL_COMPACT}${EVAL_MOBIEL}</style></head><body>${page}</body></html>`;
+  const DOC=`<!DOCTYPE html><html lang="nl"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Evaluatie Gemeente</title><style>${EVAL_RAPPORT_CSS}${EVAL_COMPACT}${EVAL_MOBIEL}</style></head><body>${page}${gemeenteThemaPage()}</body></html>`;
   w.document.open(); w.document.write(DOC); w.document.close(); w.focus();
   // printen pas als alle (kaart)tegels binnen zijn (max 8 s)
   const klaar=Promise.all([...w.document.images].map(im=>im.complete?1:new Promise(r=>{ im.onload=im.onerror=r; })));
@@ -2449,6 +2662,7 @@ function renderEvaluatie(){
       <div class="stat"><div class="stat-n" style="color:#4DA99A;">${S.pctZekerder}%</div><div class="stat-l">Zekerder online<br><span style="font-size:10px;color:#aaa;">(${S.N} formulieren)</span></div></div>
     </div>
     <button class="btn btn-t" onclick="printGemeenteEvaluatie()" style="margin-top:12px;">🏛 Gemeente-evaluatie (print)</button>
+    <button class="btn" onclick="opmerkingenOverzicht()" style="margin-top:12px;">💬 Opmerkingen per workshop</button>
   </div>
   <div class="card">
     <div class="card-title">Leeftijdsverdeling <span style="font-weight:400;color:#aaa;font-size:11px;">(per 5 jaar)</span></div>
