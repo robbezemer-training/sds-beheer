@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Samen Digitaal Sterk — Beheer v8bc</title>
+<title>Samen Digitaal Sterk — Beheer v8bf</title>
 <style>
 @font-face {
   font-family: 'Bebas Neue';
@@ -117,6 +117,91 @@ input[readonly]{background:#f9f9f9;color:#888;}
 .modal-title{font-size:15px;font-weight:700;margin-bottom:14px;color:#1C1E20;border-bottom:2px solid #E8943A;padding-bottom:6px;}
 .modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:16px;padding-top:12px;border-top:1px solid #eee;}
 </style>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&display=swap" rel="stylesheet">
+<style id="thema">
+:root{--bg:#0e1117;--card:#181c25;--card2:#212733;--line:#2a303d;--text:#ece8e1;--muted:#a2a8b4;--dim:#767e8c;--o:#E8943A;--t:#4DA99A;--kop:'Poppins','Source Sans 3',-apple-system,sans-serif;color-scheme:dark;}
+html{background:var(--bg);}
+body{background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased;font-size:15px;}
+/* header */
+.topbar{position:sticky;top:0;z-index:50;background:rgba(14,17,23,.9);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);border-bottom:1px solid var(--line);padding:max(14px,env(safe-area-inset-top)) 18px 14px;gap:12px;color:var(--text);}
+.topbar-titel{min-width:0;}
+.t-groot{font:600 20px var(--kop);color:var(--o);letter-spacing:.2px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.t-sub{font-size:10.5px;color:var(--dim);letter-spacing:.16em;text-transform:uppercase;margin-top:3px;}
+.topbar-rechts{margin-left:auto;display:flex;align-items:center;gap:10px;}
+#save-indicator{font-size:11px;color:var(--dim);}
+.icon-btn,.back-btn{width:42px;height:42px;border-radius:13px;border:1px solid var(--line);background:var(--card);color:var(--text);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;}
+.icon-btn:active,.back-btn:active{background:var(--card2);}
+.icon-btn.aan{color:var(--t);border-color:rgba(77,169,154,.45);}
+.tabs{display:none;}
+/* home-tegels */
+.home{padding:20px 16px 40px;max-width:780px;margin:0 auto;}
+.tegels{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;}
+@media(min-width:720px){.tegels{grid-template-columns:repeat(4,1fr);}}
+.tegel{appearance:none;-webkit-appearance:none;background:var(--card);border:1px solid var(--line);border-radius:24px;padding:20px 18px 18px;cursor:pointer;text-align:left;color:var(--text);min-height:150px;display:flex;flex-direction:column;justify-content:space-between;font-family:inherit;transition:border-color .15s,transform .1s;}
+.tegel:hover{border-color:rgba(232,148,58,.55);}
+.tegel:active{transform:scale(.98);}
+.t-icoon{width:56px;height:56px;border-radius:16px;background:var(--card2);display:flex;align-items:center;justify-content:center;color:var(--o);}
+.t-naam{font:500 17px var(--kop);margin-top:18px;letter-spacing:.1px;}
+.t-tel{font-size:12px;color:var(--dim);margin-top:3px;letter-spacing:.05em;}
+/* inhoud */
+.content{padding:16px 16px 48px;}
+.card,.stat,.org-card{background:var(--card);border:1px solid var(--line);border-radius:20px;box-shadow:none;}
+.card{padding:16px 18px;}
+.card-title{font:600 11px var(--kop);letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin-bottom:12px;}
+.stat-n{font-family:var(--kop);font-weight:600;color:var(--o);}
+.stat-l{color:var(--dim);letter-spacing:.06em;text-transform:uppercase;}
+label{color:var(--muted);}
+.form-row label{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;}
+input,select,textarea{background:#12161e;border:1px solid var(--line);color:var(--text);border-radius:12px;padding:10px 12px;font-size:14px;font-family:inherit;}
+input::placeholder,textarea::placeholder{color:var(--dim);}
+input:focus,select:focus,textarea:focus{border-color:var(--o);box-shadow:0 0 0 3px rgba(232,148,58,.16);}
+input[readonly]{background:var(--card2);color:var(--dim);}
+input[type=checkbox],input[type=radio]{accent-color:var(--o);}
+.btn{background:var(--card2);border:1px solid var(--line);color:var(--text);border-radius:12px;padding:10px 16px;font-weight:500;font-family:inherit;}
+.btn:active{filter:brightness(1.15);}
+.btn-o{background:var(--o);border-color:var(--o);color:#1b1206;font-weight:600;}
+.btn-t{background:var(--t);border-color:var(--t);color:#06201b;font-weight:600;}
+.btn-sm{padding:5px 11px;border-radius:10px;font-size:12px;}
+.btn-del{background:rgba(255,99,99,.12);color:#ff8f8f;border-color:rgba(255,99,99,.3);}
+.badge{letter-spacing:.02em;}
+.b-groen{background:rgba(77,169,154,.16);color:#7fd6c7;}
+.b-oranje{background:rgba(232,148,58,.16);color:#f3b06a;}
+.b-blauw{background:rgba(96,156,255,.16);color:#8db8ff;}
+.b-grijs{background:rgba(255,255,255,.07);color:var(--muted);}
+.b-rood{background:rgba(255,99,140,.16);color:#ff9bb5;}
+.b-paars{background:rgba(180,130,255,.16);color:#c8a6ff;}
+.aanw{background:var(--card2);border-color:var(--line);color:var(--muted);}
+.aanw.ja{background:rgba(77,169,154,.2);border-color:var(--t);color:#7fd6c7;}
+.aanw.nee{background:rgba(255,99,140,.16);border-color:#e0567f;color:#ff9bb5;}
+.row-item{border-bottom-color:var(--line);}
+.pb{background:var(--card2);}
+.lege{color:var(--dim);}
+.sync-status{background:var(--card2);color:var(--muted);border:1px solid var(--line);}
+.sync-status.ok{background:rgba(77,169,154,.16);color:#7fd6c7;border-color:rgba(77,169,154,.4);}
+.sync-status.err{background:rgba(255,99,99,.14);color:#ff9a9a;border-color:rgba(255,99,99,.35);}
+.sync-status.syncing{background:rgba(96,156,255,.14);color:#8db8ff;border-color:rgba(96,156,255,.35);}
+.org-header:hover{background:var(--card2);}
+.org-body{border-top-color:var(--line);}
+.org-section{border-bottom-color:var(--line);}
+.org-section-title{color:var(--dim);letter-spacing:.14em;}
+.flow-step{color:var(--dim);border-bottom-color:var(--line);}
+.sec-lbl{font-family:var(--kop);}
+.modal-overlay{background:rgba(5,7,10,.74);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);}
+.modal-box{background:var(--card);border:1px solid var(--line);border-radius:24px;color:var(--text);box-shadow:0 20px 60px rgba(0,0,0,.5);}
+.modal-title{font-family:var(--kop);color:var(--text);border-bottom-color:var(--o);}
+.modal-actions{border-top-color:var(--line);}
+/* inline-kleuren uit de lichte versie (binnen app en venster) */
+:is(.content,.modal-box) [style*="background:#fafafa" i],:is(.content,.modal-box) [style*="background:#f9f9f9" i],:is(.content,.modal-box) [style*="background:#f1f1ef" i],:is(.content,.modal-box) [style*="background:white" i],:is(.content,.modal-box) [style*="background:#fff;" i],:is(.content,.modal-box) [style*="background:#fff\"" i]{background:var(--card2)!important;}
+:is(.content,.modal-box) [style*="background:#fff3e0" i],:is(.content,.modal-box) [style*="background:#fff8e1" i]{background:rgba(232,148,58,.12)!important;border-color:rgba(232,148,58,.35)!important;}
+:is(.content,.modal-box) [style*="dashed"]{background:transparent!important;border-color:var(--line)!important;}
+:is(.content,.modal-box) [style*="color:#1c1e20" i]{color:var(--text)!important;}
+:is(.content,.modal-box) [style*="color:#444" i],:is(.content,.modal-box) [style*="color:#555" i],:is(.content,.modal-box) [style*="color:#666" i],:is(.content,.modal-box) [style*="color:#777" i]{color:#b6bcc7!important;}
+:is(.content,.modal-box) [style*="color:#888" i],:is(.content,.modal-box) [style*="color:#999" i]{color:var(--muted)!important;}
+:is(.content,.modal-box) [style*="color:#aaa" i],:is(.content,.modal-box) [style*="color:#bbb" i],:is(.content,.modal-box) [style*="color:#ccc" i]{color:var(--dim)!important;}
+:is(.content,.modal-box) [style*="color:#c00" i]{color:#ff8f8f!important;}
+:is(.content,.modal-box) [style*="#f3f3f3" i],:is(.content,.modal-box) [style*="#f0f0f0" i],:is(.content,.modal-box) [style*="#eee" i],:is(.content,.modal-box) [style*="#ddd" i]{border-color:var(--line)!important;}
+</style>
 </head>
 <body>
 
@@ -133,35 +218,19 @@ input[readonly]{background:#f9f9f9;color:#888;}
 </div>
 
 
-<!-- LOGIN OVERLAY -->
-<div id="login-overlay" style="position:fixed;inset:0;background:#1C1E20;z-index:9999;display:flex;align-items:center;justify-content:center;">
-  <div style="background:white;border-radius:16px;padding:32px 28px;max-width:320px;width:90%;text-align:center;box-shadow:0 8px 40px rgba(0,0,0,.4);">
-    <div style="font-size:40px;margin-bottom:8px;">📋</div>
-    <div style="font-size:18px;font-weight:700;color:#1C1E20;margin-bottom:4px;">Samen Digitaal Sterk</div>
-    <div style="font-size:12px;color:#888;margin-bottom:2px;">Rotterdam 2026</div>
-    <div style="font-size:10px;color:#bbb;margin-bottom:22px;">v8bc</div>
-    <input type="password" id="login-pin" placeholder="Toegangscode" maxlength="6"
-      style="text-align:center;letter-spacing:6px;font-size:20px;width:100%;padding:12px;border:2px solid #ddd;border-radius:10px;outline:none;margin-bottom:12px;"
-      onkeydown="if(event.key==='Enter') doLogin()"
-      onfocus="this.style.borderColor='#E8943A'" onblur="this.style.borderColor='#ddd'">
-    <button onclick="doLogin()" style="width:100%;padding:12px;background:#E8943A;color:white;border:none;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;">Inloggen</button>
-    <div id="login-err" style="color:#c00;font-size:12px;margin-top:10px;min-height:16px;"></div>
+<div class="topbar" id="topbar">
+  <button class="back-btn" id="back-btn" onclick="toonHome()" style="display:none;" aria-label="Terug naar overzicht"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg></button>
+  <div class="topbar-titel">
+    <div class="t-groot" id="top-titel">Samen Digitaal Sterk</div>
+    <div class="t-sub" id="top-sub">Rotterdam 2026 · v8bf</div>
   </div>
-</div>
-
-<div class="topbar">
-  <div class="topbar-logo">📋</div>
-  <div>
-    <div style="font-size:15px;font-weight:600;">Samen Digitaal Sterk</div>
-    <div style="font-size:11px;color:#aaa;">Beheer · v8bc · Rotterdam 2026</div>
-  </div>
-  <div style="margin-left:auto;display:flex;align-items:center;gap:12px;">
-    <span id="rol-badge" style="display:none;font-size:11px;color:#aaa;"></span>
+  <div class="topbar-rechts">
     <span id="sync-badge" class="sync-status" style="display:none;"></span>
-    <span style="font-size:11px;color:#aaa;" id="save-indicator"></span>
-    <button onclick="uitloggen()" style="background:none;border:none;color:#666;font-size:11px;cursor:pointer;padding:4px 8px;" title="Uitloggen">↩</button>
+    <span id="save-indicator"></span>
+    <button class="icon-btn" id="cloud-btn" onclick="sbCloudKlik()" aria-label="Cloud"><svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/></svg></button>
   </div>
 </div>
+<div class="home" id="home"><div class="tegels" id="tegels"></div></div>
 
 <div class="tabs">
   <div class="tab active" id="tab-btn-organisaties" onclick="showTab('organisaties',this)">🏢 Organisaties</div>
@@ -174,7 +243,7 @@ input[readonly]{background:#f9f9f9;color:#888;}
   <div class="tab" id="tab-btn-instellingen" onclick="showTabInstellingen(this)" style="margin-left:auto;">⚙ Instellingen</div>
 </div>
 
-<div class="content">
+<div class="content" style="display:none;">
 
 <!-- ORGANISATIES -->
 <div id="tab-organisaties" class="section active">
@@ -292,39 +361,18 @@ input[readonly]{background:#f9f9f9;color:#888;}
 
 <!-- INSTELLINGEN -->
 <div id="tab-instellingen" class="section">
-  <div id="inst-lock">
-    <div class="card" style="max-width:360px;margin:40px auto;text-align:center;">
-      <div style="font-size:32px;margin-bottom:12px;">🔒</div>
-      <div style="font-weight:600;margin-bottom:16px;">Beheerder instellingen</div>
-      <input type="password" id="pin-input" placeholder="••••" maxlength="6"
-        style="text-align:center;letter-spacing:6px;font-size:20px;width:130px;padding:10px;"
-        onkeydown="if(event.key==='Enter') checkPin()">
-      <br><br>
-      <button class="btn btn-o" onclick="checkPin()">Openen</button>
-      <div id="pin-err" style="color:#c00;font-size:12px;margin-top:8px;"></div>
-    </div>
-  </div>
-  <div id="inst-content" style="display:none;">
+  <div id="inst-content">
     <div class="card">
       <div class="card-title">☁ Cloud (Supabase)</div>
       <div id="sb-status" style="font-size:12.5px;color:#666;margin-bottom:8px;"></div>
       <div id="sb-acties" style="display:flex;gap:10px;flex-wrap:wrap;"></div>
+      <div id="sync-log" style="font-size:12px;color:#888;margin-top:6px;"></div>
       <div style="font-size:11px;color:#999;margin-top:8px;">Synchroniseert automatisch per record na elk opslaan en bij het opstarten. Vervangt nooit je hele database; bij veel verwijderingen vraagt het eerst bevestiging. Dagelijks komt er ook een momentopname in de cloud.</div>
     </div>
     <div class="card">
-      <div class="card-title">🔗 Google Sheets koppeling (alleen handmatig)</div>
-      <div class="form-row">
-        <div>
-          <label>Apps Script URL</label>
-          <input id="sheets-url" placeholder="https://script.google.com/..." oninput="saveSheetUrl()">
-        </div>
-        <div style="display:flex;flex-direction:column;justify-content:flex-end;gap:6px;">
-          <button class="btn btn-t" onclick="syncNaar()">⬆ Verstuur naar Sheets</button>
-          <button class="btn" onclick="syncVan()">⬇ Haal op uit Sheets</button>
-        </div>
-      </div>
-      <div id="sync-log" style="font-size:12px;color:#888;margin-top:6px;"></div>
-      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px;padding-top:10px;border-top:1px solid #eee;">
+      <div class="card-title">💾 Back-up</div>
+      <div style="font-size:11px;color:#999;margin-bottom:8px;">De data staat in de cloud en op dit apparaat. Een JSON-back-up maak je hier.</div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;">
         <button class="btn" onclick="exportData()">💾 Exporteren (JSON)</button>
         <button class="btn" onclick="importDataPrompt()">📂 Importeren (JSON)</button>
         <button class="btn btn-o" onclick="importExcelPrompt()">📊 Importeren (Excel planning)</button>
@@ -346,7 +394,6 @@ input[readonly]{background:#f9f9f9;color:#888;}
           <div style="font-weight:600;">SDS Beheer v8</div>
           <div style="font-size:12px;color:#888;">Samen Digitaal Sterk Rotterdam 2026</div>
         </div>
-        <button class="btn btn-sm" onclick="document.getElementById('inst-lock').style.display='block';document.getElementById('inst-content').style.display='none';">🔒 Vergrendel</button>
       </div>
     </div>
   </div>
@@ -402,57 +449,61 @@ function vwKoppel(wsId,vId){ return (db.wsVrijw||[]).find(k=>k.wsId===wsId&&k.vI
 function vwForWs(wsId){ return (db.wsVrijw||[]).filter(k=>k.wsId===wsId).map(k=>{ const p=vwPersoon(k.vId)||{naam:'?',org:'',rol:'',notitie:''}; return {vId:k.vId, wsId:k.wsId, naam:p.naam, rol:p.rol, org:p.org, notitie:p.notitie, dag1:k.dag1||'', dag2:k.dag2||''}; }); }
 let cntContacts = 1;
 
-// ── ROLLEN ──
-const ROLLEN = { '3162':'beheerder', '2026':'projectleider', '1234':'vrijwilliger' };
-const SHEETS_URL_HARDCODED = 'https://script.google.com/macros/s/AKfycbzdkGjIjX6-uP1wk6kfqiD4gD9N_ECXJVGQZjhO4uknHQGNLbItvdBnbAPVqa6KEkxi_w/exec';
-let currentRol = null;
+// ── START / WEERGAVE ──
+// Geen toegangscodes meer: de cloud-login (Supabase) is de enige beveiliging.
+let currentRol = 'beheerder';
+function applyRol() { toonHome(); }
 
-// ── LOGIN ──
-function doLogin() {
-  const code = document.getElementById('login-pin').value.trim();
-  const rol = ROLLEN[code];
-  if(!rol){ document.getElementById('login-err').textContent='Onjuiste code.'; document.getElementById('login-pin').value=''; return; }
-  currentRol = rol;
-  sessionStorage.setItem('sds_rol', rol);
-  document.getElementById('login-overlay').style.display='none';
-  applyRol(); load();
-  syncVanAuto();
+// ── HOME-TEGELS & NAVIGATIE (v8bf) ──
+const SDS_TEGELS=[
+ ['organisaties','Organisaties','<path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/>'],
+ ['workshops','Workshops','<rect width="18" height="18" x="3" y="4" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/>'],
+ ['deelnemers','Deelnemers','<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>'],
+ ['vrijwilligers','Vrijwilligers','<path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>'],
+ ['certificaten','Certificaten','<circle cx="12" cy="8" r="6"/><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/>'],
+ ['formulieren','Formulieren','<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/>'],
+ ['evaluatie','Evaluatie','<path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/>'],
+ ['instellingen','Instellingen','<line x1="21" x2="14" y1="4" y2="4"/><line x1="10" x2="3" y1="4" y2="4"/><line x1="21" x2="12" y1="12" y2="12"/><line x1="8" x2="3" y1="12" y2="12"/><line x1="21" x2="16" y1="20" y2="20"/><line x1="12" x2="3" y1="20" y2="20"/><line x1="14" x2="14" y1="2" y2="6"/><line x1="8" x2="8" y1="10" y2="14"/><line x1="16" x2="16" y1="18" y2="22"/>']
+];
+function sdsTegelTekst(t){
+  const n=a=>(db[a]||[]).length;
+  if(t==='organisaties') return n('organisaties')+' organisaties';
+  if(t==='workshops') return n('workshops')+' workshops';
+  if(t==='deelnemers') return n('deelnemers')+' deelnemers';
+  if(t==='vrijwilligers') return n('vrijwilligers')+' vrijwilligers';
+  if(t==='evaluatie') return (db.evaluaties||[]).filter(e=>e.type==='d').length+' formulieren';
+  if(t==='instellingen') return sbSession()?'Cloud verbonden':'Cloud: niet ingelogd';
+  if(t==='certificaten') return 'Afdrukken';
+  if(t==='formulieren') return 'Rapporten';
+  return '';
 }
-function uitloggen() {
-  sessionStorage.removeItem('sds_rol'); currentRol=null;
-  document.getElementById('login-overlay').style.display='flex';
-  document.getElementById('login-pin').value='';
-  document.getElementById('login-err').textContent='';
+function bouwHome(){
+  const el=document.getElementById('tegels'); if(!el) return;
+  el.innerHTML=SDS_TEGELS.map(x=>'<button class="tegel" onclick="openTab(\''+x[0]+'\')"><span class="t-icoon"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">'+x[2]+'</svg></span><span><span class="t-naam" style="display:block;">'+x[1]+'</span><span class="t-tel" style="display:block;">'+sdsTegelTekst(x[0])+'</span></span></button>').join('');
 }
-function herstelSessie() {
-  const rol = sessionStorage.getItem('sds_rol');
-  if(rol && Object.values(ROLLEN).includes(rol)){ currentRol=rol; document.getElementById('login-overlay').style.display='none'; applyRol(); return true; }
-  return false;
+function toonHome(){
+  document.getElementById('home').style.display='block';
+  document.querySelector('.content').style.display='none';
+  document.getElementById('back-btn').style.display='none';
+  document.getElementById('top-titel').textContent='Samen Digitaal Sterk';
+  document.getElementById('top-sub').textContent='Rotterdam 2026 · v8bf';
+  bouwHome(); window.scrollTo(0,0);
 }
-
-// ── ROLLEN UI ──
-function applyRol() {
-  const isB = currentRol==='beheerder', isPL = currentRol==='projectleider', isVW = currentRol==='vrijwilliger';
-  const zichtbaar = isB ? ['organisaties','workshops','deelnemers','vrijwilligers','certificaten','formulieren','evaluatie','instellingen']
-                  : isPL ? ['organisaties','workshops','deelnemers','vrijwilligers','certificaten','formulieren','evaluatie']
-                  : ['deelnemers','vrijwilligers','formulieren'];
-  ['organisaties','workshops','deelnemers','vrijwilligers','certificaten','formulieren','evaluatie','instellingen'].forEach(t=>{
-    const b=document.getElementById('tab-btn-'+t); if(b) b.style.display=zichtbaar.includes(t)?'':'none';
-  });
-  // Eerste zichtbare tab
-  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
-  document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
-  const first = document.getElementById('tab-btn-'+zichtbaar[0]);
-  if(first){ first.classList.add('active'); document.getElementById('tab-'+zichtbaar[0]).classList.add('active'); }
-  const badge=document.getElementById('rol-badge');
-  if(badge){ badge.textContent=isB?'🔑 Beheerder':isPL?'👁 Projectleider':'🙋 Vrijwilliger'; badge.style.display=''; }
-  // Verberg toevoeg-knop voor projectleider bij org
-  const addCard=document.getElementById('org-add-card');
-  if(addCard) addCard.style.display=(isB)?'':'none';
+function sdsSectie(t){
+  const x=SDS_TEGELS.find(a=>a[0]===t);
+  document.getElementById('home').style.display='none';
+  document.querySelector('.content').style.display='block';
+  document.getElementById('back-btn').style.display='inline-flex';
+  document.getElementById('top-titel').textContent=x?x[1]:t;
+  document.getElementById('top-sub').textContent='SDS Beheer';
+  window.scrollTo(0,0);
 }
+function openTab(t){ const el=document.getElementById('tab-btn-'+t); if(t==='instellingen') showTabInstellingen(el); else showTab(t,el); }
+function sbCloudKlik(){ if(sbSession()) sbSync(); else sbLoginDialog(); }
 
 // ── TABS ──
 function showTab(t, el) {
+  sdsSectie(t);
   document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
   document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
   document.getElementById('tab-'+t).classList.add('active'); el.classList.add('active');
@@ -464,17 +515,11 @@ function showTab(t, el) {
   if(t==='evaluatie') renderEvaluatie();
 }
 function showTabInstellingen(el) {
+  sdsSectie('instellingen');
   document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
   document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
   document.getElementById('tab-instellingen').classList.add('active'); el.classList.add('active');
-  document.getElementById('pin-input').focus();
-}
-function checkPin() {
-  if(document.getElementById('pin-input').value==='3162'){
-    document.getElementById('inst-lock').style.display='none';
-    document.getElementById('inst-content').style.display='block';
-    document.getElementById('sheets-url').value=getSheetUrl(); sbRenderStatus();
-  } else { document.getElementById('pin-err').textContent='Onjuiste pincode.'; document.getElementById('pin-input').value=''; }
+  sbRenderStatus();
 }
 
 // ── STORAGE ──
@@ -492,8 +537,6 @@ function save() {
     sbAfterSave();
   }catch(e){}
 }
-function getSheetUrl(){ return localStorage.getItem('sds_sheets_url')||SHEETS_URL_HARDCODED; }
-function saveSheetUrl(){ localStorage.setItem('sds_sheets_url',document.getElementById('sheets-url').value.trim()); }
 
 // ── SYNC ──
 function setSyncBadge(state,tekst){ const el=document.getElementById('sync-badge'); el.style.display='inline-flex'; el.className='sync-status '+state; el.textContent=tekst; if(state==='ok') setTimeout(()=>el.style.display='none',4000); }
@@ -617,13 +660,13 @@ function sbAfterSave(){
 }
 function sbStart(){
   if(sbSession()) sbSync();
-  else{ setSyncBadge('err','☁ Niet ingelogd'); const b=document.getElementById('sync-badge'); if(b){ b.style.cursor='pointer'; b.onclick=sbLoginDialog; } }
   sbRenderStatus();
 }
 function sbRenderStatus(){
   const el=document.getElementById('sb-status'); if(!el) return;
   const s=sbSession(), st=sbState();
   el.innerHTML=s?('Ingelogd als <b>'+_oe(s.email||'')+'</b>'+(st.lastSync?' · laatst gesynchroniseerd '+new Date(st.lastSync).toLocaleString('nl-NL',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):' · nog niet gesynchroniseerd')):'Niet ingelogd — data staat alleen op dit apparaat.';
+  const cb=document.getElementById('cloud-btn'); if(cb) cb.classList.toggle('aan',!!s);
   const a=document.getElementById('sb-acties'); if(a) a.innerHTML=s
     ?'<button class="btn btn-t" onclick="sbSync()">☁ Nu synchroniseren</button><button class="btn" onclick="sbUitloggen()">Uitloggen</button>'
     :'<button class="btn btn-t" onclick="sbLoginDialog()">☁ Inloggen</button>';
@@ -657,29 +700,6 @@ async function sbAccountMaken(){
   }catch(err){ m.style.color='#c00'; m.textContent=err.message; }
 }
 
-// Sheets wordt niet meer automatisch opgehaald (overschreef lokale data); alleen nog handmatig via de knoppen.
-async function syncVanAuto() { sbStart(); }
-async function syncNaar() {
-  const url=getSheetUrl(); if(!url){ alert('Geen URL.'); return; }
-  setSyncBadge('syncing','⟳ Bezig…'); setSyncLog('Data versturen…');
-  try{
-    const resp=await fetch(url,{method:'POST',body:JSON.stringify(db),headers:{'Content-Type':'text/plain'}});
-    const result=await resp.json();
-    if(result.ok){ setSyncBadge('ok','✓ Gesynchroniseerd'); setSyncLog('✓ '+new Date().toLocaleTimeString('nl-NL',{hour:'2-digit',minute:'2-digit'})); }
-    else{ setSyncBadge('err','✗ Fout'); setSyncLog('Fout: '+(result.error||'onbekend')); }
-  }catch(e){ setSyncBadge('err','✗ Mislukt'); setSyncLog('Controleer de URL.'); }
-}
-async function syncVan() {
-  const url=getSheetUrl(); if(!url){ alert('Geen URL.'); return; }
-  setSyncBadge('syncing','⟳ Ophalen…'); setSyncLog('Data ophalen…');
-  try{
-    const resp=await fetch(url+'?action=get'); const result=await resp.json();
-    if(result.ok&&result.data){
-      if(!confirm('Huidige data vervangen?')){ document.getElementById('sync-badge').style.display='none'; setSyncLog(''); return; }
-      db=result.data; ensureSchema(); save(); render(); setSyncBadge('ok','✓ Opgehaald'); setSyncLog('✓ '+new Date().toLocaleTimeString('nl-NL',{hour:'2-digit',minute:'2-digit'}));
-    } else{ setSyncBadge('err','✗ Geen data'); setSyncLog('Verstuur eerst vanuit dit systeem.'); }
-  }catch(e){ setSyncBadge('err','✗ Mislukt'); setSyncLog('Controleer de URL.'); }
-}
 function exportData(){ const b=new Blob([JSON.stringify(db,null,2)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download='SDS_backup_'+new Date().toISOString().slice(0,10)+'.json'; a.click(); }
 function importDataPrompt(){
   const inp=document.createElement('input'); inp.type='file'; inp.accept='.json';
@@ -1161,18 +1181,18 @@ function opmerkingenOverzicht(){
   const kop=t=>'<div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#E8943A;margin:8px 0 3px;">'+t+'</div>';
   const koptl=t=>'<div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#4DA99A;margin:8px 0 3px;">'+t+'</div>';
   const cij=r=>r.cijfer?' <span style="color:#aaa;font-size:11px;">['+r.cijfer+']</span>':'';
-  const item=(inhoud,ster)=>'<div class="opm-item" data-ster="'+(ster?1:0)+'" style="display:flex;gap:7px;padding:4px 0;border-bottom:1px solid #f3f3f3;font-size:12.5px;line-height:1.4;">'+inhoud+'</div>';
+  const item=(inhoud,ster,rid,f)=>'<div class="opm-item" data-ster="'+(ster?1:0)+'"'+(rid?' data-rid="'+rid+'" data-f="'+f+'"':'')+' style="display:flex;gap:7px;padding:4px 0;border-bottom:1px solid #f3f3f3;font-size:12.5px;line-height:1.4;">'+inhoud+(rid?'<button onclick="opmEdit(this)" title="Aanpassen" style="border:none;background:none;color:#aaa;font-size:14px;cursor:pointer;flex-shrink:0;padding:0 2px;margin-left:auto;">✎</button>':'')+'</div>';
   const punt='<span style="color:#ccc;flex-shrink:0;">•</span>';
   let totaal=0;
   const blokken=G.map(g=>{
     const w=g.w;
     let h='<div class="opm-ws" style="margin-bottom:14px;"><div style="font-weight:700;font-size:13.5px;border-bottom:2px solid #1C1E20;padding-bottom:2px;">'+_oe(w.org)+(w.wijk?' — '+_oe(w.wijk):'')+' <span style="font-weight:400;color:#888;font-size:11px;">· '+fmtDateShort(w.dag1)+' · '+g.n+' formulieren</span></div>';
-    if(g.geleerd.length){ h+=kop('Wat geleerd'); h+=g.geleerd.map(x=>{ totaal++; return item('<button id="st-'+x.r.id+'" onclick="toggleSter('+x.r.id+')" title="Kies als citaat voor het rapport" style="border:none;background:none;font-size:16px;line-height:1;padding:0;cursor:pointer;flex-shrink:0;">'+(x.r.ster?'⭐':'☆')+'</button><div>'+_oe(x.t)+cij(x.r)+'</div>',x.r.ster); }).join(''); }
-    if(g.wens.length){ h+=kop('Gewenst onderwerp / vervolg'); h+=g.wens.map(x=>{ totaal++; return item(punt+'<div>'+_oe(x.t)+cij(x.r)+'</div>',false); }).join(''); }
-    if(g.opm.length){ h+=kop('Overige opmerkingen'); h+=g.opm.map(x=>{ totaal++; return item(punt+'<div>'+_oe(x.t)+cij(x.r)+'</div>',false); }).join(''); }
+    if(g.geleerd.length){ h+=kop('Wat geleerd'); h+=g.geleerd.map(x=>{ totaal++; return item('<button id="st-'+x.r.id+'" onclick="toggleSter('+x.r.id+')" title="Kies als citaat voor het rapport" style="border:none;background:none;font-size:16px;line-height:1;padding:0;cursor:pointer;flex-shrink:0;">'+(x.r.ster?'⭐':'☆')+'</button><div class="opm-tekst" style="flex:1;">'+_oe(x.t)+cij(x.r)+'</div>',x.r.ster,x.r.id,'geleerd'); }).join(''); }
+    if(g.wens.length){ h+=kop('Gewenst onderwerp / vervolg'); h+=g.wens.map(x=>{ totaal++; return item(punt+'<div class="opm-tekst" style="flex:1;">'+_oe(x.t)+cij(x.r)+'</div>',false,x.r.id,'onderwerp'); }).join(''); }
+    if(g.opm.length){ h+=kop('Overige opmerkingen'); h+=g.opm.map(x=>{ totaal++; return item(punt+'<div class="opm-tekst" style="flex:1;">'+_oe(x.t)+cij(x.r)+'</div>',false,x.r.id,'opmerkingen'); }).join(''); }
     const orgTxt=(o,label)=>{ if(!o) return ''; let s=''; const a=(o.opmerkingen||'').trim(), b=(o.beter||'').trim();
-      if(a){ totaal++; s+=item(punt+'<div>'+_oe(a)+'</div>',false); }
-      if(b){ totaal++; s+=item(punt+'<div><span style="color:#888;">Wat kan beter:</span> '+_oe(b)+'</div>',false); }
+      if(a){ totaal++; s+=item(punt+'<div class="opm-tekst" style="flex:1;">'+_oe(a)+'</div>',false,o.id,'opmerkingen'); }
+      if(b){ totaal++; s+=item(punt+'<div class="opm-tekst" style="flex:1;"><span style="color:#888;">Wat kan beter:</span> '+_oe(b)+'</div>',false,o.id,'beter'); }
       return s?koptl(label)+s:''; };
     h+=orgTxt(g.org,'Organisatie'+(g.org&&g.org.contactpersoon?' — '+_oe(g.org.contactpersoon):''));
     h+=orgTxt(g.eigen,'Eigen evaluatie (SMC &amp; RB Photography)');
@@ -1188,6 +1208,34 @@ function opmerkingenOverzicht(){
     +'<span style="font-size:11px;color:#888;">'+totaal+' opmerkingen in '+G.length+' workshops · ⭐ = citaat in rapport (bij "Wat het meest geleerd")</span></div>'
     +'<div id="opm-lijst">'+algBlok+(blokken||'<div style="color:#aaa;font-size:12px;">Nog geen opmerkingen ingevoerd.</div>')+'</div>';
   openModal('Opmerkingen per workshop');
+}
+function _opmTekstHtml(r,f){
+  const t=(r[f]||'').trim();
+  const pre=(r.type!=='d'&&f==='beter')?'<span style="color:#888;">Wat kan beter:</span> ':'';
+  const c=(r.type==='d'&&r.cijfer)?' <span style="color:#aaa;font-size:11px;">['+r.cijfer+']</span>':'';
+  return pre+_oe(t)+c;
+}
+function opmEdit(btn){
+  const it=btn.closest('.opm-item'); if(!it||it.dataset.editing==='1') return;
+  const r=db.evaluaties.find(e=>e.id===+it.dataset.rid); if(!r) return;
+  const f=it.dataset.f, box=it.querySelector('.opm-tekst'); if(!box) return;
+  it.dataset.editing='1'; btn.style.display='none';
+  const raw=String(r[f]||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  box.innerHTML='<textarea style="width:100%;min-height:58px;font-size:13px;">'+raw+'</textarea><div style="margin-top:4px;display:flex;gap:6px;"><button class="btn btn-o btn-sm" onclick="opmEditOpslaan(this)">Opslaan</button><button class="btn btn-sm" onclick="opmEditAnnuleer(this)">Annuleren</button></div>';
+  const ta=box.querySelector('textarea'); if(ta){ ta.focus(); ta.setSelectionRange(ta.value.length,ta.value.length); }
+}
+function opmEditKlaar(it){ it.dataset.editing='0'; const b=it.querySelector('button[onclick^="opmEdit("]'); if(b) b.style.display=''; }
+function opmEditOpslaan(btn){
+  const it=btn.closest('.opm-item'); const r=db.evaluaties.find(e=>e.id===+it.dataset.rid); if(!r) return;
+  const f=it.dataset.f, ta=it.querySelector('textarea');
+  r[f]=(ta.value||'').trim(); r.bew=new Date().toISOString(); save();
+  it.querySelector('.opm-tekst').innerHTML=_opmTekstHtml(r,f);
+  opmEditKlaar(it); if(!r[f]) it.style.display='none';
+  const evT=document.getElementById('tab-evaluatie'); if(evT&&evT.classList.contains('active')) renderEvaluatie();
+}
+function opmEditAnnuleer(btn){
+  const it=btn.closest('.opm-item'); const r=db.evaluaties.find(e=>e.id===+it.dataset.rid); if(!r) return;
+  it.querySelector('.opm-tekst').innerHTML=_opmTekstHtml(r,it.dataset.f); opmEditKlaar(it);
 }
 function opmFilter(){
   const q=((document.getElementById('opm-zoek')||{}).value||'').trim().toLowerCase();
@@ -1308,48 +1356,68 @@ function themaHeatmapHtml(){
 function themaAlgemeenHtml(){
   const alg=(db.eigenAlgemeen||[]).filter(Boolean);
   if(!alg.length) return '';
-  return '<div class="section"><div class="sec-label teal">Algemeen \u2014 onze eigen evaluatie</div><div class="qbox">'+alg.map(a=>'<div style="margin-bottom:0.8mm;break-inside:avoid;page-break-inside:avoid;">\u2022 '+_oe(a)+'</div>').join('')+'</div></div>';
+  return '<div class="section" style="break-inside:avoid;page-break-inside:avoid;"><div class="sec-label teal">Algemeen \u2014 onze eigen evaluatie</div><div class="qbox">'+alg.map(a=>'<div style="margin-bottom:0.8mm;break-inside:avoid;page-break-inside:avoid;">\u2022 '+_oe(a)+'</div>').join('')+'</div></div>';
 }
-function themaSignalenHtml(type){
+function _chipKleur(v){ v=String(v||'').toLowerCase(); if(/^(zeer goed|goed|ja)$/.test(v)) return ['#e8f5e9','#2e7d32']; if(/^(redelijk|misschien)$/.test(v)) return ['#fff3e0','#e65100']; if(/^(matig|slecht|niet|nee)$/.test(v)) return ['#fce4ec','#b71c1c']; return ['#f1f1ef','#555']; }
+function _chip(label,v){ if(!v) return ''; const k=_chipKleur(v); return '<span style="display:inline-block;font-size:7.5pt;padding:0.3mm 2mm;border-radius:2mm;margin:0 1.5mm 1mm 0;background:'+k[0]+';color:'+k[1]+';-webkit-print-color-adjust:exact;print-color-adjust:exact;"><span style="opacity:.75;">'+label+'</span> <b>'+_oe(v)+'</b></span>'; }
+function themaEvalBlokken(type){
   const out=[];
   [...db.workshops].sort((a,b)=>(a.dag1||'')>(b.dag1||'')?1:-1).forEach(w=>{
     db.evaluaties.filter(e=>e.wsId===w.id&&e.type===type).forEach(e=>{
-      const kop=w.org+(w.wijk?' \u2014 '+w.wijk:'')+' \u00b7 '+fmtDateShort(w.dag1)+(type==='o'&&e.contactpersoon?' \u00b7 '+_oe(e.contactpersoon):'');
+      const kop=_oe(w.org)+(w.wijk?' \u2014 '+_oe(w.wijk):'')+' \u00b7 '+fmtDateShort(w.dag1)+(type==='o'&&e.contactpersoon?' \u00b7 '+_oe(e.contactpersoon):'');
+      const chips=_chip('Samenwerking',e.samenwerking)+_chip('Aansluiting doelgroep',e.aansluiting)+(type==='o'?_chip('Volgend jaar opnieuw',e.opnieuw):'');
       const a=(e.opmerkingen||'').trim(), b=(e.beter||'').trim();
       const geen=s=>/^geen (op|aan)/i.test(s);
-      const tekst=[a&&!geen(a)?_oe(a):'', b&&!geen(b)?'<span style="color:#888;">Wat kan beter:</span> '+_oe(b):''].filter(Boolean).join('<br>');
-      if(tekst) out.push('<div class="qbox" style="break-inside:avoid;page-break-inside:avoid;"><div style="font-size:7.5pt;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#E8943A;margin-bottom:0.8mm;">'+kop+'</div>'+tekst+'</div>');
+      const dik=x=>String(x).replace(/\n{2,}/g,'\n');
+      const tekst=[a&&!geen(a)?_oe(dik(a)):'', b&&!geen(b)?'<span style="color:#888;">Wat kan beter:</span> '+_oe(dik(b)):''].filter(Boolean).join('<br>');
+      if(chips||tekst) out.push('<div class="qbox" style="break-inside:avoid;page-break-inside:avoid;"><div style="font-size:7.5pt;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#E8943A;margin-bottom:0.8mm;">'+kop+'</div>'+(chips?'<div style="margin-bottom:0.8mm;">'+chips+'</div>':'')+tekst+'</div>');
     });
   });
-  return out.join('')||'<div style="font-size:10pt;color:#aaa;">\u2014</div>';
+  return out.join('')||'<div style="font-size:10pt;color:#aaa;">Nog geen evaluaties ingevuld.</div>';
+}
+function _themaPagina(titel,sub,inhoud,label){
+  return '<div class="page">'+evalHEAD()+'<div class="body evx">'+evalTB(titel)+(sub?'<div class="ws-sub">'+sub+'</div>':'')+inhoud+'</div><div class="footer"><div class="footer-txt">Samen Digitaal Sterk \u00b7 Rotterdam 2026</div><div class="footer-txt">'+label+'</div></div><div class="bar" style="margin-top:2mm;"></div></div>';
 }
 function gemeenteThemaPage(){
   const recs=(db.evaluaties||[]).filter(e=>e.type==='d');
   const T=themaAnalyse(recs);
-  if(!T.effect.length&&!T.wens.length) return '';
-  return '<div class="page">'+evalHEAD()+'<div class="body evx">'+evalTB('Thema\u2019s uit de feedback')
-    +'<div class="ws-sub">Alle workshops \u00b7 deelnemers, organisaties en onze eigen evaluatie apart</div>'
-    +'<div class="section"><div class="sec-label">Wat deelnemers leerden</div>'+themaBars(T.effect,'o',true)+'</div>'
-    +'<div class="section"><div class="sec-label teal">Wat men nog wil</div>'+themaBars(T.wens,'t',true)+'</div>'
-    +'<div class="section"><div class="sec-label">Verloop per workshop</div>'+themaHeatmapHtml()+'</div>'
-    +'<div class="section"><div class="sec-label teal">Evaluatie van de organisaties</div>'+themaSignalenHtml('o')+'</div>'
-    +'<div class="section"><div class="sec-label">Onze eigen evaluatie \u2014 per workshop</div><div style="font-size:8.5pt;color:#888;margin:-1.5mm 0 2mm;">Stichting Mens Centraal &amp; Rob Bezemer Photography</div>'+themaSignalenHtml('e')+'</div>'+themaAlgemeenHtml()
-    +'<div style="font-size:8pt;color:#999;">Thema\u2019s zijn gegroepeerd op trefwoorden in '+T.nG+' antwoorden op \u201cwat geleerd\u201d en '+T.nW+' wensen; \u00e9\u00e9n antwoord kan meerdere thema\u2019s raken.</div>'
-    +'</div><div class="footer"><div class="footer-txt">Samen Digitaal Sterk \u00b7 Rotterdam 2026</div><div class="footer-txt">Thema\u2019s \u00b7 Gemeente Rotterdam</div></div><div class="bar" style="margin-top:2mm;"></div></div>';
+  const heeft=t=>db.evaluaties.some(e=>e.type===t&&((e.opmerkingen||'').trim()||(e.beter||'').trim()||e.samenwerking||e.aansluiting));
+  let uit='';
+  if(T.effect.length||T.wens.length){
+    uit+=_themaPagina('Thema\u2019s uit de feedback','Alle workshops \u00b7 opmerkingen van deelnemers',
+      '<div class="section"><div class="sec-label">Wat deelnemers leerden</div>'+themaBars(T.effect,'o',true)+'</div>'
+      +'<div class="section"><div class="sec-label teal">Wat men nog wil</div>'+themaBars(T.wens,'t',true)+'</div>'
+      +'<div class="section"><div class="sec-label">Verloop per workshop</div>'+themaHeatmapHtml()+'</div>'
+      +'<div style="font-size:8pt;color:#999;">Thema\u2019s zijn gegroepeerd op trefwoorden in '+T.nG+' antwoorden op \u201cwat geleerd\u201d en '+T.nW+' wensen; \u00e9\u00e9n antwoord kan meerdere thema\u2019s raken.</div>',
+      'Thema\u2019s \u00b7 Gemeente Rotterdam');
+  }
+  if(heeft('o')) uit+=_themaPagina('Evaluatie organisaties','Per workshop: samenwerking, aansluiting van de doelgroep, wat kan beter en opmerkingen',
+      '<div class="section"><div class="sec-label teal">Evaluatie van de organisaties</div>'+themaEvalBlokken('o')+'</div>',
+      'Evaluatie organisaties \u00b7 Gemeente Rotterdam');
+  if(heeft('e')) uit+=_themaPagina('Onze eigen evaluatie','Stichting Mens Centraal &amp; Rob Bezemer Photography',
+      '<div class="section"><div class="sec-label">Eigen evaluatie \u2014 per workshop</div>'+themaEvalBlokken('e')+'</div>',
+      'Eigen evaluatie \u00b7 Gemeente Rotterdam');
+  if((db.eigenAlgemeen||[]).some(Boolean)) uit+=_themaPagina('Onze eigen evaluatie \u2014 algemeen','Punten die niet bij \u00e9\u00e9n workshop horen \u00b7 Stichting Mens Centraal &amp; Rob Bezemer Photography',
+      themaAlgemeenHtml(),
+      'Eigen evaluatie algemeen \u00b7 Gemeente Rotterdam');
+  return uit;
 }
+
 function evalBullets(wsId){
   const recs=(db.evaluaties||[]).filter(e=>e.wsId===wsId&&e.type==='d');
   if(!recs.length) return '<div style="font-size:12px;color:#aaa;padding:4px 0;">Nog geen formulieren.</div>';
-  return `<ul style="list-style:none;margin:0;padding:0;max-height:200px;overflow:auto;">`+recs.map(r=>`
+  return `<ul style="list-style:none;margin:0;padding:0;max-height:240px;overflow:auto;">`+recs.map(r=>`
     <li style="display:flex;align-items:center;gap:7px;padding:3px 0;border-bottom:1px solid #f3f3f3;font-size:12px;">
       <span style="display:inline-flex;width:22px;height:22px;flex-shrink:0;align-items:center;justify-content:center;border-radius:50%;background:#E8943A;color:#fff;font-size:11px;font-weight:700;">${r.cijfer||'–'}</span>
-      <span style="flex:1;color:#1C1E20;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.aanbevelen||''}${r.geleerd?` <span style="color:#888;">· ${r.geleerd}</span>`:''}</span>
+      <span style="flex:1;color:#1C1E20;line-height:1.35;">${r.aanbevelen||''}${r.geleerd?` <span style="color:#888;">· ${r.geleerd}</span>`:''}</span>
+      <button class="btn btn-sm" onclick="evalEditDeelnemer(${r.id},${wsId})" title="Formulier aanpassen" style="font-size:11px;padding:1px 7px;flex-shrink:0;">✎</button>
       <button class="btn btn-del btn-sm" onclick="evalDelDeelnemer(${r.id},${wsId})" style="font-size:10px;padding:1px 6px;flex-shrink:0;">🗑</button>
     </li>`).join('')+`</ul>`;
 }
 
 function evalWorkshop(wsId){
   const w=db.workshops.find(x=>x.id===wsId); if(!w) return;
+  evalEditId=null;
   modalType='evaluatie'; modalId=wsId; ensureSchema();
   const recs=db.evaluaties.filter(e=>e.wsId===wsId&&e.type==='d');
   const o=db.evaluaties.find(e=>e.wsId===wsId&&e.type==='o')||{};
@@ -1367,7 +1435,7 @@ function evalWorkshop(wsId){
     <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:#E8943A;letter-spacing:1px;">Ingevoerde deelnemer-formulieren (<span id="evd-count">${recs.length}</span>)</div>
     <div id="evd-lijst" style="margin:6px 0 10px;">${evalBullets(wsId)}</div>
     <div style="background:#f9f9f9;border-radius:6px;padding:10px;">
-      <div style="font-size:10px;font-weight:700;color:#E8943A;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">+ Eén formulier invoeren</div>
+      <div id="evd-titel" style="font-size:10px;font-weight:700;color:#E8943A;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">+ Eén formulier invoeren</div>
       <label style="font-size:12px;font-weight:600;display:block;">1 · Cijfer (1–10)</label>
       <select id="evd-cijfer" style="margin:3px 0 8px;width:auto;"><option value="">— Kies —</option>${[1,2,3,4,5,6,7,8,9,10].map(n=>`<option value="${n}">${n}</option>`).join('')}</select>
       <label style="font-size:12px;font-weight:600;display:block;">2 · Voelt u zich na de workshops (Veilig Online &amp; AI en fotografie) zekerder online en meer bedreven in de bediening van uw smartphone?</label>
@@ -1381,7 +1449,7 @@ function evalWorkshop(wsId){
       <div style="margin:3px 0 4px;">${radio('evd-aanb',['Nee','Misschien','Ja','Zeker!'])}</div>
       <label style="font-size:12px;font-weight:600;display:block;">6 · Overige opmerkingen</label>
       <textarea id="evd-opm" style="min-height:42px;margin:3px 0 8px;"></textarea>
-      <button class="btn btn-o btn-sm" onclick="evalAddDeelnemer(${wsId})">+ Formulier toevoegen</button>
+      <button class="btn btn-o btn-sm" id="evd-knop" onclick="evalAddDeelnemer(${wsId})">+ Formulier toevoegen</button> <button class="btn btn-sm" id="evd-annuleer" onclick="evalEditAnnuleer(${wsId})" style="display:none;">Annuleren</button>
     </div>
     <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:#4DA99A;letter-spacing:1px;margin:16px 0 6px;">Organisatie-evaluatie</div>
     <div class="form-row"><div><label>Contactpersoon</label><input id="ev-org-contact" value="${o.contactpersoon||w.contact||''}"></div>
@@ -1405,6 +1473,28 @@ function evalWorkshop(wsId){
   openModal('Evaluatie invoeren');
 }
 
+let evalEditId=null;
+function evalEditDeelnemer(recId,wsId){
+  const r=db.evaluaties.find(e=>e.id===recId&&e.type==='d'); if(!r) return;
+  evalEditId=recId;
+  const set=(id,v)=>{ const el=document.getElementById(id); if(el) el.value=v==null?'':v; };
+  set('evd-cijfer',r.cijfer); set('evd-geleerd',r.geleerd); set('evd-onderwerp',r.onderwerp); set('evd-opm',r.opmerkingen);
+  const kies=(naam,v)=>document.querySelectorAll('input[name="'+naam+'"]').forEach(el=>{ el.checked=(el.value===v); });
+  kies('evd-vertrouwen',r.vertrouwen); kies('evd-meer',r.meer); kies('evd-aanb',r.aanbevelen);
+  const t=document.getElementById('evd-titel'); if(t) t.textContent='✎ Formulier aanpassen';
+  const k=document.getElementById('evd-knop'); if(k){ k.textContent='✓ Wijzigingen opslaan'; }
+  const a=document.getElementById('evd-annuleer'); if(a) a.style.display='';
+  if(t) t.scrollIntoView({behavior:'smooth',block:'center'});
+}
+function evalEditReset(){
+  evalEditId=null;
+  ['evd-cijfer','evd-geleerd','evd-onderwerp','evd-opm'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  document.querySelectorAll('input[name="evd-meer"],input[name="evd-aanb"],input[name="evd-vertrouwen"]').forEach(el=>el.checked=false);
+  const t=document.getElementById('evd-titel'); if(t) t.textContent='+ Eén formulier invoeren';
+  const k=document.getElementById('evd-knop'); if(k) k.textContent='+ Formulier toevoegen';
+  const a=document.getElementById('evd-annuleer'); if(a) a.style.display='none';
+}
+function evalEditAnnuleer(wsId){ evalEditReset(); }
 function evalAddDeelnemer(wsId){
   const cijfer=parseInt(document.getElementById('evd-cijfer').value);
   const rb=n=>{const el=document.querySelector('input[name="'+n+'"]:checked');return el?el.value:'';};
@@ -1412,6 +1502,14 @@ function evalAddDeelnemer(wsId){
   const aanb=rb('evd-aanb');
   if(isNaN(cijfer)&&!aanb&&!geleerd){ alert('Vul minstens een cijfer of antwoord in.'); return; }
   ensureSchema();
+  if(evalEditId!=null){
+    const r=db.evaluaties.find(e=>e.id===evalEditId);
+    if(r){ r.cijfer=isNaN(cijfer)?null:cijfer; r.geleerd=geleerd; r.vertrouwen=rb('evd-vertrouwen'); r.meer=rb('evd-meer'); r.onderwerp=(document.getElementById('evd-onderwerp').value||'').trim(); r.aanbevelen=aanb; r.opmerkingen=(document.getElementById('evd-opm').value||'').trim(); r.bew=new Date().toISOString(); }
+    save(); evalEditReset();
+    document.getElementById('evd-lijst').innerHTML=evalBullets(wsId);
+    renderWorkshops(); const evT=document.getElementById('tab-evaluatie'); if(evT&&evT.classList.contains('active')) renderEvaluatie();
+    return;
+  }
   db.evaluaties.push({ id:Date.now()+Math.floor(Math.random()*1000), wsId, type:'d',
     cijfer:isNaN(cijfer)?null:cijfer, geleerd, vertrouwen:rb('evd-vertrouwen'), meer:rb('evd-meer'),
     onderwerp:(document.getElementById('evd-onderwerp').value||'').trim(),
@@ -2157,6 +2255,7 @@ function maakWorkshopVanOrg(orgId) {
   document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
   document.getElementById('tab-workshops').classList.add('active');
   document.getElementById('tab-btn-workshops').classList.add('active');
+  sdsSectie('workshops');
   renderWorkshops(orgId);
 }
 
@@ -2982,11 +3081,10 @@ function genRapport(){
   <button class="btn btn-t" onclick="navigator.clipboard.writeText(window._rapport).then(()=>alert('Gekopieerd!'))" style="margin-top:8px;">📋 Kopiëren</button>`;
 }
 
-function render(){ renderOrgs(); renderWorkshops(); }
+function render(){ renderOrgs(); renderWorkshops(); bouwHome(); }
 
 // Start
-if(!herstelSessie()){ document.getElementById('login-pin').focus(); }
-else{ load(); syncVanAuto(); }
+load(); applyRol(); sbStart();
 </script>
 
 <script>
