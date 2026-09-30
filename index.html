@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Samen Digitaal Sterk — Beheer v8as</title>
+<title>Samen Digitaal Sterk — Beheer v8au</title>
 <style>
 @font-face {
   font-family: 'Bebas Neue';
@@ -139,7 +139,7 @@ input[readonly]{background:#f9f9f9;color:#888;}
     <div style="font-size:40px;margin-bottom:8px;">📋</div>
     <div style="font-size:18px;font-weight:700;color:#1C1E20;margin-bottom:4px;">Samen Digitaal Sterk</div>
     <div style="font-size:12px;color:#888;margin-bottom:2px;">Rotterdam 2026</div>
-    <div style="font-size:10px;color:#bbb;margin-bottom:22px;">v8as</div>
+    <div style="font-size:10px;color:#bbb;margin-bottom:22px;">v8au</div>
     <input type="password" id="login-pin" placeholder="Toegangscode" maxlength="6"
       style="text-align:center;letter-spacing:6px;font-size:20px;width:100%;padding:12px;border:2px solid #ddd;border-radius:10px;outline:none;margin-bottom:12px;"
       onkeydown="if(event.key==='Enter') doLogin()"
@@ -153,7 +153,7 @@ input[readonly]{background:#f9f9f9;color:#888;}
   <div class="topbar-logo">📋</div>
   <div>
     <div style="font-size:15px;font-weight:600;">Samen Digitaal Sterk</div>
-    <div style="font-size:11px;color:#aaa;">Beheer · v8as · Rotterdam 2026</div>
+    <div style="font-size:11px;color:#aaa;">Beheer · v8au · Rotterdam 2026</div>
   </div>
   <div style="margin-left:auto;display:flex;align-items:center;gap:12px;">
     <span id="rol-badge" style="display:none;font-size:11px;color:#aaa;"></span>
@@ -272,7 +272,7 @@ input[readonly]{background:#f9f9f9;color:#888;}
     </div></div>
     <div id="form-preview-info" style="font-size:12px;color:#888;margin-bottom:14px;min-height:18px;"></div>
     <div style="display:flex;gap:10px;flex-wrap:wrap;">
-      <button class="btn btn-o" onclick="printWorkshoprapport()">🖨 Workshoprapport</button>
+      <button class="btn btn-o" onclick="printWorkshoprapport()">📄 Workshoprapport (PDF)</button>
       <button class="btn btn-o" onclick="printDeelnameFormulier()">🖨 Deelnameformulier</button>
       <button class="btn" onclick="printDeelnameFormulierBlanco()">🖨 Deelname (blanco)</button>
       <button class="btn btn-t" onclick="printEvaluatieDeelnemer()">🖨 Evaluatie deelnemer</button>
@@ -1122,6 +1122,10 @@ html,body { background:#e9e9e9; font-family:'Source Sans 3',Arial,sans-serif; co
 .deel-table tbody tr:nth-child(even){ background:#fafafa; } .deel-table td.mail { color:#555; }
 .deel-table thead { display:table-header-group; } .deel-table tr { page-break-inside:avoid; }
 .deel-table .c { text-align:center; }
+.deel-table { table-layout:auto; }
+.deel-table th,.deel-table td { width:auto !important; }
+.deel-table td { overflow:visible !important; text-overflow:clip !important; }
+.deel-table td:first-child,.deel-table td.mail { white-space:normal; overflow-wrap:anywhere; }
 .deel-table th:nth-child(1),.deel-table td:nth-child(1){width:32mm;} .deel-table th:nth-child(2),.deel-table td:nth-child(2){width:16mm;}
 .deel-table th:nth-child(3),.deel-table td:nth-child(3){width:14mm;} .deel-table th:nth-child(4),.deel-table td:nth-child(4){width:30mm;}
 .deel-table th:nth-child(5),.deel-table td:nth-child(5){width:26mm;} .deel-table th:nth-child(6),.deel-table td:nth-child(6){width:48mm;}
@@ -1448,10 +1452,83 @@ function deelnemerslijstPages(wsId){
       <div class="footer"><div class="footer-txt">Samen Digitaal Sterk · Rotterdam 2026</div><div class="footer-txt">Deelnemerslijst · ${orgTekst}</div></div><div class="bar" style="margin-top:2mm;"></div></div>`;
   }).join('');
 }
+// ── PDF-GENERATIE (v8at) — html2canvas + jsPDF; elke .page krijgt eigen oriëntatie (portrait/landscape) ──
+function _laadScript(src){
+  return new Promise((res,rej)=>{
+    const s=document.createElement('script'); s.src=src; s.onload=res;
+    s.onerror=()=>rej(new Error('Kon bibliotheek niet laden (internet?)'));
+    document.head.appendChild(s);
+  });
+}
+async function _laadPdfLibs(){
+  if(!window.html2canvas) await _laadScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js');
+  if(!(window.jspdf&&window.jspdf.jsPDF)) await _laadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
+}
+function _pdfNaam(prefix, w){
+  const slug=s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^A-Za-z0-9]+/g,'-').replace(/^-+|-+$/g,'');
+  return [prefix, slug((w&&w.org)||''), slug((w&&w.wijk)||''), (w&&w.dag1)||''].filter(Boolean).join('_')+'.pdf';
+}
+async function maakPdfUitDoc(DOC, bestand){
+  const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+  const toast=document.createElement('div');
+  toast.style.cssText='position:fixed;left:50%;top:16px;transform:translateX(-50%);background:#1C1E20;color:#fff;padding:10px 18px;border-radius:8px;font:14px sans-serif;z-index:99999;box-shadow:0 2px 12px rgba(0,0,0,.3);max-width:90vw;text-align:center;';
+  toast.textContent='PDF wordt gemaakt…';
+  document.body.appendChild(toast);
+  let fr=null;
+  try{
+    await _laadPdfLibs();
+    // Render het rapport in een verborgen iframe, breed genoeg voor landscape (277mm ≈ 1047px)
+    fr=document.createElement('iframe');
+    fr.style.cssText='position:fixed;left:-10000px;top:0;width:1240px;height:1600px;border:0;';
+    document.body.appendChild(fr);
+    const geladen=new Promise(r=>fr.addEventListener('load',r,{once:true}));
+    const d=fr.contentDocument; d.open(); d.write(DOC); d.close();
+    await Promise.race([geladen,sleep(8000)]);
+    const st=d.createElement('style');
+    st.textContent='html,body{background:#fff!important;width:1240px;}.page{box-shadow:none!important;margin:0!important;}';
+    d.head.appendChild(st);
+    try{
+      await Promise.race([Promise.all([
+        d.fonts.load('700 22pt Poppins'), d.fonts.load('400 10pt "Source Sans 3"'),
+        d.fonts.load('600 10pt "Source Sans 3"'), d.fonts.load('700 10pt "Source Sans 3"')
+      ]),sleep(5000)]);
+    }catch(e){}
+    await Promise.race([Promise.all([...d.images].map(im=>im.complete?1:new Promise(r=>{im.onload=im.onerror=r;}))),sleep(5000)]);
+    const paginas=[...d.querySelectorAll('.page')];
+    if(!paginas.length) throw new Error('Geen pagina\'s gevonden in het rapport.');
+    const {jsPDF}=window.jspdf;
+    let pdf=null;
+    for(let i=0;i<paginas.length;i++){
+      toast.textContent='PDF wordt gemaakt… pagina '+(i+1)+' van '+paginas.length;
+      await sleep(30);
+      const el=paginas[i];
+      const land=el.classList.contains('land');
+      const pw=land?297:210, ph=land?210:297;
+      const canvas=await html2canvas(el,{scale:2.5,backgroundColor:'#ffffff',useCORS:true,logging:false,windowWidth:1240});
+      if(!pdf) pdf=new jsPDF({orientation:land?'landscape':'portrait',unit:'mm',format:'a4',compress:true});
+      else pdf.addPage('a4',land?'landscape':'portrait');
+      let bw=el.getBoundingClientRect().width*25.4/96;
+      let bh=bw*canvas.height/canvas.width;
+      const f=Math.min(1,pw/bw,ph/bh); bw*=f; bh*=f;   // nooit vergroten; te hoge pagina krimpt naar A4
+      pdf.addImage(canvas.toDataURL('image/jpeg',0.92),'JPEG',(pw-bw)/2,0,bw,bh,undefined,'FAST');
+      canvas.width=canvas.height=0;
+    }
+    const url=URL.createObjectURL(pdf.output('blob'));
+    const a=document.createElement('a'); a.href=url; a.download=bestand; document.body.appendChild(a); a.click(); a.remove();
+    toast.innerHTML='✓ PDF klaar · <a href="'+url+'" download="'+bestand+'" target="_blank" style="color:#E8943A;font-weight:700;">Openen / opslaan</a>';
+    setTimeout(()=>{ toast.remove(); URL.revokeObjectURL(url); },20000);
+  }catch(e){
+    console.error(e);
+    toast.remove();
+    alert('PDF maken mislukt: '+(e&&e.message?e.message:e));
+  }finally{
+    if(fr) fr.remove();
+  }
+}
 function printEvaluatieRapport(wsId){
   if(!wsId){ alert('Geen workshop gekozen.'); return; }
   const DOC=`<!DOCTYPE html><html lang="nl"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Evaluatierapport</title><style>${EVAL_RAPPORT_CSS}${EVAL_COMPACT}${EVAL_MOBIEL}</style></head><body>${evalRapportPage(wsId)}${deelnemerslijstPages(wsId)}</body></html>`;
-  const w=window.open('','_blank'); w.document.write(DOC); w.document.close(); w.focus(); setTimeout(()=>{ if(!w.matchMedia('(max-width:700px)').matches) w.print(); },700);
+  return maakPdfUitDoc(DOC, _pdfNaam('Evaluatierapport', db.workshops.find(x=>x.id===wsId)));
 }
 function pillCls(v){ return v==='Zeer goed'?'pill-zg':v==='Goed'?'pill-g':(v==='Redelijk'||v==='Matig')?'pill-r':(v==='Slecht'||v==='Niet')?'pill-m':'pill-nvt'; }
 function srcBlokHtml(lab,rec){
@@ -2280,6 +2357,10 @@ function printWorkshoprapport(){
   table.beg td { font-size:10.5pt; padding:1.4mm 2mm; border-bottom:1px solid #eee; }
   table.beg .bnaam { font-weight:600; } table.beg .brol { color:#777; font-size:9.5pt; }
   table.beg .c, table.deel .c { text-align:center; }
+  table.deel { table-layout:auto; }
+  table.deel th, table.deel td { width:auto !important; }
+  table.deel td { overflow:visible !important; text-overflow:clip !important; }
+  table.deel td:first-child, table.deel td.mail { white-space:normal; overflow-wrap:anywhere; }
   table.deel { width:100%; border-collapse:collapse; table-layout:fixed; }
   table.deel th { text-align:left; font-size:7.5pt; letter-spacing:.5px; text-transform:uppercase; color:#E8943A; border-bottom:2px solid #E8943A; padding:1.3mm 2mm; }
   table.deel td { font-size:8.5pt; padding:1.1mm 2mm; border-bottom:1px solid #eee; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
@@ -2333,7 +2414,7 @@ function printWorkshoprapport(){
   const _evO=(db.evaluaties||[]).find(e=>e.wsId===wsId&&e.type==='o');
   const evalPg=(_evD.length||_evO)?evalRapportPage(wsId):'';
   const DOC=`<!DOCTYPE html><html lang="nl"><head><meta charset="UTF-8"><title>Workshoprapport — ${orgTekst}</title><style>${CSS}${EVAL_COMPACT}</style></head><body>${PAGE1}${evalPg}${landPages}</body></html>`;
-  const w=window.open('','_blank'); w.document.write(DOC); w.document.close(); w.focus(); setTimeout(()=>w.print(),700);
+  return maakPdfUitDoc(DOC, _pdfNaam('Workshoprapport', ws));
 }
 
 
