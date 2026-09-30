@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Samen Digitaal Sterk — Beheer v8ba</title>
+<title>Samen Digitaal Sterk — Beheer v8bb</title>
 <style>
 @font-face {
   font-family: 'Bebas Neue';
@@ -139,7 +139,7 @@ input[readonly]{background:#f9f9f9;color:#888;}
     <div style="font-size:40px;margin-bottom:8px;">📋</div>
     <div style="font-size:18px;font-weight:700;color:#1C1E20;margin-bottom:4px;">Samen Digitaal Sterk</div>
     <div style="font-size:12px;color:#888;margin-bottom:2px;">Rotterdam 2026</div>
-    <div style="font-size:10px;color:#bbb;margin-bottom:22px;">v8ba</div>
+    <div style="font-size:10px;color:#bbb;margin-bottom:22px;">v8bb</div>
     <input type="password" id="login-pin" placeholder="Toegangscode" maxlength="6"
       style="text-align:center;letter-spacing:6px;font-size:20px;width:100%;padding:12px;border:2px solid #ddd;border-radius:10px;outline:none;margin-bottom:12px;"
       onkeydown="if(event.key==='Enter') doLogin()"
@@ -153,7 +153,7 @@ input[readonly]{background:#f9f9f9;color:#888;}
   <div class="topbar-logo">📋</div>
   <div>
     <div style="font-size:15px;font-weight:600;">Samen Digitaal Sterk</div>
-    <div style="font-size:11px;color:#aaa;">Beheer · v8ba · Rotterdam 2026</div>
+    <div style="font-size:11px;color:#aaa;">Beheer · v8bb · Rotterdam 2026</div>
   </div>
   <div style="margin-left:auto;display:flex;align-items:center;gap:12px;">
     <span id="rol-badge" style="display:none;font-size:11px;color:#aaa;"></span>
@@ -1144,10 +1144,13 @@ function themaHeatmapHtml(){
   });
   return h+'</div><div style="font-size:8pt;color:#999;margin-top:1.5mm;">Aantal antwoorden per workshop met dit thema; kleur = aandeel. Kleine aantallen, dus indicatief.</div>';
 }
+function themaAlgemeenHtml(){
+  const alg=(db.eigenAlgemeen||[]).filter(Boolean);
+  if(!alg.length) return '';
+  return '<div class="section"><div class="sec-label teal">Algemeen \u2014 onze eigen evaluatie</div><div class="qbox">'+alg.map(a=>'<div style="margin-bottom:0.8mm;break-inside:avoid;page-break-inside:avoid;">\u2022 '+_oe(a)+'</div>').join('')+'</div></div>';
+}
 function themaSignalenHtml(type){
   const out=[];
-  const alg=type==='e'?(db.eigenAlgemeen||[]).filter(Boolean):[];
-  if(alg.length) out.push('<div class="qbox"><div style="font-size:7.5pt;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#E8943A;margin-bottom:0.8mm;">Algemeen</div>'+alg.map(a=>'<div style="margin-bottom:0.8mm;break-inside:avoid;page-break-inside:avoid;">\u2022 '+_oe(a)+'</div>').join('')+'</div>');
   [...db.workshops].sort((a,b)=>(a.dag1||'')>(b.dag1||'')?1:-1).forEach(w=>{
     db.evaluaties.filter(e=>e.wsId===w.id&&e.type===type).forEach(e=>{
       const kop=w.org+(w.wijk?' \u2014 '+w.wijk:'')+' \u00b7 '+fmtDateShort(w.dag1)+(type==='o'&&e.contactpersoon?' \u00b7 '+_oe(e.contactpersoon):'');
@@ -1169,7 +1172,7 @@ function gemeenteThemaPage(){
     +'<div class="section"><div class="sec-label teal">Wat men nog wil</div>'+themaBars(T.wens,'t',true)+'</div>'
     +'<div class="section"><div class="sec-label">Verloop per workshop</div>'+themaHeatmapHtml()+'</div>'
     +'<div class="section"><div class="sec-label teal">Evaluatie van de organisaties</div>'+themaSignalenHtml('o')+'</div>'
-    +'<div class="section"><div class="sec-label">Onze eigen evaluatie</div><div style="font-size:8.5pt;color:#888;margin:-1.5mm 0 2mm;">Stichting Mens Centraal &amp; Rob Bezemer Photography</div>'+themaSignalenHtml('e')+'</div>'
+    +'<div class="section"><div class="sec-label">Onze eigen evaluatie \u2014 per workshop</div><div style="font-size:8.5pt;color:#888;margin:-1.5mm 0 2mm;">Stichting Mens Centraal &amp; Rob Bezemer Photography</div>'+themaSignalenHtml('e')+'</div>'+themaAlgemeenHtml()
     +'<div style="font-size:8pt;color:#999;">Thema\u2019s zijn gegroepeerd op trefwoorden in '+T.nG+' antwoorden op \u201cwat geleerd\u201d en '+T.nW+' wensen; \u00e9\u00e9n antwoord kan meerdere thema\u2019s raken.</div>'
     +'</div><div class="footer"><div class="footer-txt">Samen Digitaal Sterk \u00b7 Rotterdam 2026</div><div class="footer-txt">Thema\u2019s \u00b7 Gemeente Rotterdam</div></div><div class="bar" style="margin-top:2mm;"></div></div>';
 }
