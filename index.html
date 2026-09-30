@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Samen Digitaal Sterk — Beheer v8ax</title>
+<title>Samen Digitaal Sterk — Beheer v8ba</title>
 <style>
 @font-face {
   font-family: 'Bebas Neue';
@@ -139,7 +139,7 @@ input[readonly]{background:#f9f9f9;color:#888;}
     <div style="font-size:40px;margin-bottom:8px;">📋</div>
     <div style="font-size:18px;font-weight:700;color:#1C1E20;margin-bottom:4px;">Samen Digitaal Sterk</div>
     <div style="font-size:12px;color:#888;margin-bottom:2px;">Rotterdam 2026</div>
-    <div style="font-size:10px;color:#bbb;margin-bottom:22px;">v8ax</div>
+    <div style="font-size:10px;color:#bbb;margin-bottom:22px;">v8ba</div>
     <input type="password" id="login-pin" placeholder="Toegangscode" maxlength="6"
       style="text-align:center;letter-spacing:6px;font-size:20px;width:100%;padding:12px;border:2px solid #ddd;border-radius:10px;outline:none;margin-bottom:12px;"
       onkeydown="if(event.key==='Enter') doLogin()"
@@ -153,7 +153,7 @@ input[readonly]{background:#f9f9f9;color:#888;}
   <div class="topbar-logo">📋</div>
   <div>
     <div style="font-size:15px;font-weight:600;">Samen Digitaal Sterk</div>
-    <div style="font-size:11px;color:#aaa;">Beheer · v8ax · Rotterdam 2026</div>
+    <div style="font-size:11px;color:#aaa;">Beheer · v8ba · Rotterdam 2026</div>
   </div>
   <div style="margin-left:auto;display:flex;align-items:center;gap:12px;">
     <span id="rol-badge" style="display:none;font-size:11px;color:#aaa;"></span>
@@ -353,6 +353,7 @@ let db = { organisaties:[], workshops:[], deelnemers:[], vrijwilligers:[], evalu
 function ensureSchema(){
   if(!db.evaluaties) db.evaluaties=[];
   if(!db.pcCache) db.pcCache={};
+  if(!Array.isArray(db.eigenAlgemeen)) db.eigenAlgemeen=[];
   if(!db.vrijwilligers) db.vrijwilligers=[];
   if(!db.wsVrijw){
     // Eenmalige migratie: oud model (vrijwilliger = persoon-per-workshop met wsId/dag1/dag2)
@@ -992,6 +993,7 @@ function _opmData(){
       eigen:db.evaluaties.find(e=>e.wsId===w.id&&e.type==='e')||null};
   }).filter(g=>g.geleerd.length||g.wens.length||g.opm.length||(g.org&&((g.org.opmerkingen||'').trim()||(g.org.beter||'').trim()))||(g.eigen&&((g.eigen.opmerkingen||'').trim()||(g.eigen.beter||'').trim())));
 }
+function slaEigenAlgemeen(){ const el=document.getElementById('eig-alg'); if(!el) return; db.eigenAlgemeen=el.value.split('\n').map(x=>x.trim()).filter(Boolean); save(); }
 function opmerkingenOverzicht(){
   const G=_opmData();
   modalType='opmerkingen'; modalId=null;
@@ -1015,13 +1017,15 @@ function opmerkingenOverzicht(){
     h+=orgTxt(g.eigen,'Eigen evaluatie (SMC &amp; RB Photography)');
     return h+'</div>';
   }).join('');
+  const algL=(db.eigenAlgemeen||[]).filter(Boolean); totaal+=algL.length;
+  const algBlok=algL.length?'<div class="opm-ws" style="margin-bottom:14px;"><div style="font-weight:700;font-size:13.5px;border-bottom:2px solid #1C1E20;padding-bottom:2px;">Algemeen <span style="font-weight:400;color:#888;font-size:11px;">\u00b7 eigen evaluatie</span></div>'+algL.map(a=>item(punt+'<div>'+_oe(a)+'</div>',false)).join('')+'</div>':'';
   document.getElementById('modal-body').innerHTML=
     '<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:8px;">'
     +'<input id="opm-zoek" placeholder="Zoek in opmerkingen…" oninput="opmFilter()" style="flex:1;min-width:140px;">'
     +'<label style="font-weight:400;font-size:12px;display:inline-flex;align-items:center;gap:4px;margin:0;"><input type="checkbox" id="opm-ster" onchange="opmFilter()" style="width:auto;"> alleen ⭐</label></div>'
     +'<div style="display:flex;gap:8px;align-items:center;margin-bottom:10px;flex-wrap:wrap;"><button class="btn btn-sm" id="opm-kopieer" onclick="opmKopieer()">📋 Kopieer alles</button>'
     +'<span style="font-size:11px;color:#888;">'+totaal+' opmerkingen in '+G.length+' workshops · ⭐ = citaat in rapport (bij "Wat het meest geleerd")</span></div>'
-    +'<div id="opm-lijst">'+(blokken||'<div style="color:#aaa;font-size:12px;">Nog geen opmerkingen ingevoerd.</div>')+'</div>';
+    +'<div id="opm-lijst">'+algBlok+(blokken||'<div style="color:#aaa;font-size:12px;">Nog geen opmerkingen ingevoerd.</div>')+'</div>';
   openModal('Opmerkingen per workshop');
 }
 function opmFilter(){
@@ -1045,6 +1049,8 @@ function toggleSter(id){
 function opmKopieer(){
   const G=_opmData(); const L=[];
   L.push('SDS Rotterdam 2026 — opmerkingen per workshop (geen namen van deelnemers)');
+  const algK=(db.eigenAlgemeen||[]).filter(Boolean);
+  if(algK.length){ L.push('','## Algemeen (eigen evaluatie)'); algK.forEach(a=>L.push('- '+a.replace(/\s*\n\s*/g,' / '))); }
   G.forEach(g=>{
     const w=g.w;
     L.push('','## '+w.org+(w.wijk?' — '+w.wijk:'')+' · '+fmtDateShort(w.dag1)+' · '+g.n+' formulieren');
@@ -1138,15 +1144,17 @@ function themaHeatmapHtml(){
   });
   return h+'</div><div style="font-size:8pt;color:#999;margin-top:1.5mm;">Aantal antwoorden per workshop met dit thema; kleur = aandeel. Kleine aantallen, dus indicatief.</div>';
 }
-function themaSignalenHtml(){
+function themaSignalenHtml(type){
   const out=[];
+  const alg=type==='e'?(db.eigenAlgemeen||[]).filter(Boolean):[];
+  if(alg.length) out.push('<div class="qbox"><div style="font-size:7.5pt;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#E8943A;margin-bottom:0.8mm;">Algemeen</div>'+alg.map(a=>'<div style="margin-bottom:0.8mm;break-inside:avoid;page-break-inside:avoid;">\u2022 '+_oe(a)+'</div>').join('')+'</div>');
   [...db.workshops].sort((a,b)=>(a.dag1||'')>(b.dag1||'')?1:-1).forEach(w=>{
-    db.evaluaties.filter(e=>e.wsId===w.id&&(e.type==='o'||e.type==='e')).forEach(e=>{
-      const kop=w.org+(w.wijk?' \u2014 '+w.wijk:'')+' \u00b7 '+fmtDateShort(w.dag1)+' \u00b7 '+(e.type==='o'?'Organisatie':'Eigen evaluatie');
+    db.evaluaties.filter(e=>e.wsId===w.id&&e.type===type).forEach(e=>{
+      const kop=w.org+(w.wijk?' \u2014 '+w.wijk:'')+' \u00b7 '+fmtDateShort(w.dag1)+(type==='o'&&e.contactpersoon?' \u00b7 '+_oe(e.contactpersoon):'');
       const a=(e.opmerkingen||'').trim(), b=(e.beter||'').trim();
       const geen=s=>/^geen (op|aan)/i.test(s);
       const tekst=[a&&!geen(a)?_oe(a):'', b&&!geen(b)?'<span style="color:#888;">Wat kan beter:</span> '+_oe(b):''].filter(Boolean).join('<br>');
-      if(tekst) out.push('<div class="qbox"><div style="font-size:7.5pt;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#E8943A;margin-bottom:0.8mm;">'+kop+'</div>'+tekst+'</div>');
+      if(tekst) out.push('<div class="qbox" style="break-inside:avoid;page-break-inside:avoid;"><div style="font-size:7.5pt;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#E8943A;margin-bottom:0.8mm;">'+kop+'</div>'+tekst+'</div>');
     });
   });
   return out.join('')||'<div style="font-size:10pt;color:#aaa;">\u2014</div>';
@@ -1156,11 +1164,12 @@ function gemeenteThemaPage(){
   const T=themaAnalyse(recs);
   if(!T.effect.length&&!T.wens.length) return '';
   return '<div class="page">'+evalHEAD()+'<div class="body evx">'+evalTB('Thema\u2019s uit de feedback')
-    +'<div class="ws-sub">Alle workshops \u00b7 opmerkingen van deelnemers en organisaties</div>'
+    +'<div class="ws-sub">Alle workshops \u00b7 deelnemers, organisaties en onze eigen evaluatie apart</div>'
     +'<div class="section"><div class="sec-label">Wat deelnemers leerden</div>'+themaBars(T.effect,'o',true)+'</div>'
     +'<div class="section"><div class="sec-label teal">Wat men nog wil</div>'+themaBars(T.wens,'t',true)+'</div>'
     +'<div class="section"><div class="sec-label">Verloop per workshop</div>'+themaHeatmapHtml()+'</div>'
-    +'<div class="section"><div class="sec-label teal">Wat organisaties en wij signaleren</div>'+themaSignalenHtml()+'</div>'
+    +'<div class="section"><div class="sec-label teal">Evaluatie van de organisaties</div>'+themaSignalenHtml('o')+'</div>'
+    +'<div class="section"><div class="sec-label">Onze eigen evaluatie</div><div style="font-size:8.5pt;color:#888;margin:-1.5mm 0 2mm;">Stichting Mens Centraal &amp; Rob Bezemer Photography</div>'+themaSignalenHtml('e')+'</div>'
     +'<div style="font-size:8pt;color:#999;">Thema\u2019s zijn gegroepeerd op trefwoorden in '+T.nG+' antwoorden op \u201cwat geleerd\u201d en '+T.nW+' wensen; \u00e9\u00e9n antwoord kan meerdere thema\u2019s raken.</div>'
     +'</div><div class="footer"><div class="footer-txt">Samen Digitaal Sterk \u00b7 Rotterdam 2026</div><div class="footer-txt">Thema\u2019s \u00b7 Gemeente Rotterdam</div></div><div class="bar" style="margin-top:2mm;"></div></div>';
 }
@@ -1306,6 +1315,8 @@ html,body { background:#e9e9e9; font-family:'Source Sans 3',Arial,sans-serif; co
 .deel-table td { font-size:8.5pt; padding:1.1mm 2mm; border-bottom:1px solid #eee; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .deel-table tbody tr:nth-child(even){ background:#fafafa; } .deel-table td.mail { color:#555; }
 .deel-table thead { display:table-header-group; } .deel-table tr { page-break-inside:avoid; }
+.sess-card, .stat, .qbox, .org-item, .brow, .pc-table tr { break-inside:avoid; page-break-inside:avoid; }
+.sec-label { break-after:avoid; page-break-after:avoid; }
 .deel-table .c { text-align:center; }
 .deel-table { table-layout:auto; }
 .deel-table th,.deel-table td { width:auto !important; }
@@ -1697,7 +1708,7 @@ async function maakPdfUitDoc(DOC, bestand){
       const pxmm=96/25.4, rect=el.getBoundingClientRect(), sc=canvas.height/rect.height;
       const bwMm=rect.width/pxmm, totaal=rect.height, RAND=10;
       let slices=[];
-      if(totaal/pxmm<=ph*1.04){ slices=[[0,totaal]]; }
+      if(totaal/pxmm<=ph*1.10){ slices=[[0,totaal]]; }
       else{
         const bottoms=sel=>[...el.querySelectorAll(sel)].map(c=>c.getBoundingClientRect().bottom-rect.top).sort((a,b)=>a-b);
         const groot=bottoms('.section,.sess-card,.stat-grid'), klein=bottoms('.brow,.qbox,.org-item,tr');
@@ -2663,6 +2674,11 @@ function renderEvaluatie(){
     </div>
     <button class="btn btn-t" onclick="printGemeenteEvaluatie()" style="margin-top:12px;">🏛 Gemeente-evaluatie (print)</button>
     <button class="btn" onclick="opmerkingenOverzicht()" style="margin-top:12px;">💬 Opmerkingen per workshop</button>
+  </div>
+  <div class="card">
+    <div class="card-title">Algemeen — eigen evaluatie</div>
+    <div style="font-size:11px;color:#888;margin-bottom:6px;">Punten die niet bij één workshop horen. Één punt per regel; komt in de gemeente-evaluatie onder “wat organisaties en wij signaleren”.</div>
+    <textarea id="eig-alg" rows="7" onchange="slaEigenAlgemeen()" style="width:100%;">${(db.eigenAlgemeen||[]).join('\n').replace(/&/g,'&amp;').replace(/</g,'&lt;')}</textarea>
   </div>
   <div class="card">
     <div class="card-title">Leeftijdsverdeling <span style="font-weight:400;color:#aaa;font-size:11px;">(per 5 jaar)</span></div>
