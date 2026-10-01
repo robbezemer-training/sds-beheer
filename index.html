@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Samen Digitaal Sterk — Beheer v8bf</title>
+<title>Samen Digitaal Sterk — Beheer v8bh</title>
 <style>
 @font-face {
   font-family: 'Bebas Neue';
@@ -201,6 +201,33 @@ input[type=checkbox],input[type=radio]{accent-color:var(--o);}
 :is(.content,.modal-box) [style*="color:#aaa" i],:is(.content,.modal-box) [style*="color:#bbb" i],:is(.content,.modal-box) [style*="color:#ccc" i]{color:var(--dim)!important;}
 :is(.content,.modal-box) [style*="color:#c00" i]{color:#ff8f8f!important;}
 :is(.content,.modal-box) [style*="#f3f3f3" i],:is(.content,.modal-box) [style*="#f0f0f0" i],:is(.content,.modal-box) [style*="#eee" i],:is(.content,.modal-box) [style*="#ddd" i]{border-color:var(--line)!important;}
+
+/* ── kaarten binnen de secties (v8bh) ── */
+.ws-card{padding:0;overflow:hidden;}
+.ws-kop,.org-header{display:flex;align-items:center;gap:14px;padding:16px 18px;cursor:pointer;-webkit-tap-highlight-color:transparent;}
+.ws-kop:active,.org-header:active{background:var(--card2);}
+.ws-naam{font:600 16px var(--kop);color:var(--text);line-height:1.3;}
+.ws-wijk{font:400 14px 'Source Sans 3',sans-serif;color:var(--muted);}
+.ws-meta{font-size:13px;color:var(--muted);margin-top:3px;}
+.ws-chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:9px;}
+.chip{font-size:11.5px;padding:3px 9px;border-radius:999px;background:var(--card2);color:var(--muted);border:1px solid var(--line);white-space:nowrap;}
+.chip-t{color:#7fd6c7;border-color:rgba(77,169,154,.4);background:rgba(77,169,154,.12);}
+.ws-num{text-align:right;flex-shrink:0;}
+.ws-num .n{font:600 28px var(--kop);color:var(--o);line-height:1;}
+.ws-num .l{font-size:10px;color:var(--dim);letter-spacing:.1em;text-transform:uppercase;margin-top:4px;}
+.chev{color:var(--dim);flex-shrink:0;transition:transform .2s;}
+.ws-card.open .chev,.org-card.open .chev{transform:rotate(180deg);color:var(--o);}
+.ws-body{border-top:1px solid var(--line);padding:14px 18px 18px;}
+.ws-info{display:grid;gap:6px;font-size:13.5px;margin-bottom:14px;}
+.ws-info>div{display:flex;gap:10px;}
+.ws-info span{flex:0 0 92px;font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);padding-top:2px;}
+.ws-info a{color:var(--t);text-decoration:none;}
+.ws-acties{display:flex;gap:8px;flex-wrap:wrap;padding-bottom:14px;margin-bottom:12px;border-bottom:1px solid var(--line);}
+.org-header{align-items:center;}
+.org-body .org-section{padding:14px 18px;}
+.row-item{font-size:13.5px;}
+.content .card>div[style*="text-transform:uppercase"],.ws-body>div[style*="text-transform:uppercase"]{font-family:var(--kop)!important;font-size:10.5px!important;letter-spacing:.16em!important;}
+.ico-btn svg{display:block;}
 </style>
 </head>
 <body>
@@ -222,7 +249,7 @@ input[type=checkbox],input[type=radio]{accent-color:var(--o);}
   <button class="back-btn" id="back-btn" onclick="toonHome()" style="display:none;" aria-label="Terug naar overzicht"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg></button>
   <div class="topbar-titel">
     <div class="t-groot" id="top-titel">Samen Digitaal Sterk</div>
-    <div class="t-sub" id="top-sub">Rotterdam 2026 · v8bf</div>
+    <div class="t-sub" id="top-sub">Rotterdam 2026 · v8bh</div>
   </div>
   <div class="topbar-rechts">
     <span id="sync-badge" class="sync-status" style="display:none;"></span>
@@ -454,6 +481,29 @@ let cntContacts = 1;
 let currentRol = 'beheerder';
 function applyRol() { toonHome(); }
 
+// ── Geen emoji-plaatjes in de schermen (v8bh) ──
+const _EMO=/(?!\u2B50)[\p{Extended_Pictographic}](\uFE0F)?(\u200D[\p{Extended_Pictographic}]\uFE0F?)*\s?/gu;
+const _SVG_PRULLENBAK='<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>';
+const _SVG_POTLOOD='<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>';
+function sdsOntEmoji(root){
+  if(!root) return;
+  root.querySelectorAll('button').forEach(b=>{
+    if(b.dataset.ico) return;
+    const t=(b.textContent||'').trim();
+    if(/^🗑\uFE0F?$/u.test(t)){ b.innerHTML=_SVG_PRULLENBAK; b.dataset.ico='1'; b.title=b.title||'Verwijderen'; }
+    else if(/^✏\uFE0F?$/u.test(t)){ b.innerHTML=_SVG_POTLOOD; b.dataset.ico='1'; b.title=b.title||'Bewerken'; }
+  });
+  const w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT,{acceptNode:n=>{ const p=n.parentNode&&n.parentNode.nodeName; return (p==='SCRIPT'||p==='STYLE'||p==='OPTION'||p==='TEXTAREA')?NodeFilter.FILTER_REJECT:NodeFilter.FILTER_ACCEPT; }});
+  const lijst=[]; while(w.nextNode()) lijst.push(w.currentNode);
+  lijst.forEach(n=>{ const v=n.nodeValue; if(!_EMO.test(v)) return; _EMO.lastIndex=0; n.nodeValue=v.replace(_EMO,''); _EMO.lastIndex=0; });
+}
+(function(){
+  let bezig=false;
+  const doel=()=>[document.querySelector('.content'),document.getElementById('modal-body'),document.getElementById('modal-title'),document.getElementById('sync-badge')];
+  const obs=new MutationObserver(()=>{ if(bezig) return; bezig=true; try{ doel().forEach(sdsOntEmoji); } finally{ obs.takeRecords(); bezig=false; } });
+  const start=()=>{ doel().forEach(el=>{ if(el){ sdsOntEmoji(el); obs.observe(el,{childList:true,subtree:true,characterData:true}); } }); };
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',start); else start();
+})();
 // ── HOME-TEGELS & NAVIGATIE (v8bf) ──
 const SDS_TEGELS=[
  ['organisaties','Organisaties','<path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/>'],
@@ -486,7 +536,7 @@ function toonHome(){
   document.querySelector('.content').style.display='none';
   document.getElementById('back-btn').style.display='none';
   document.getElementById('top-titel').textContent='Samen Digitaal Sterk';
-  document.getElementById('top-sub').textContent='Rotterdam 2026 · v8bf';
+  document.getElementById('top-sub').textContent='Rotterdam 2026 · v8bh';
   bouwHome(); window.scrollTo(0,0);
 }
 function sdsSectie(t){
@@ -1955,6 +2005,16 @@ async function maakPdfUitDoc(DOC, bestand){
         d.fonts.load('600 10pt "Source Sans 3"'), d.fonts.load('700 10pt "Source Sans 3"')
       ]),sleep(5000)]);
     }catch(e){}
+    const extern=[...d.images].filter(im=>/^https?:/i.test(im.getAttribute('src')||''));
+    if(extern.length){
+      toast.textContent='PDF wordt gemaakt… kaart laden';
+      await Promise.race([Promise.all(extern.map(async im=>{ try{
+        const r=await fetch(im.getAttribute('src'),{mode:'cors'}); if(!r.ok) return;
+        const blob=await r.blob();
+        const url=await new Promise(res=>{ const f=new FileReader(); f.onload=()=>res(f.result); f.readAsDataURL(blob); });
+        await new Promise(res=>{ im.onload=im.onerror=res; im.src=url; });
+      }catch(e){} })),sleep(12000)]);
+    }
     await Promise.race([Promise.all([...d.images].map(im=>im.complete?1:new Promise(r=>{im.onload=im.onerror=r;}))),sleep(5000)]);
     const paginas=[...d.querySelectorAll('.page')];
     if(!paginas.length) throw new Error('Geen pagina\'s gevonden in het rapport.');
@@ -1973,7 +2033,7 @@ async function maakPdfUitDoc(DOC, bestand){
       if(totaal/pxmm<=ph*1.10){ slices=[[0,totaal]]; }
       else{
         const bottoms=sel=>[...el.querySelectorAll(sel)].map(c=>c.getBoundingClientRect().bottom-rect.top).sort((a,b)=>a-b);
-        const groot=bottoms('.section,.sess-card,.stat-grid'), klein=bottoms('.brow,.qbox,.org-item,tr');
+        const groot=bottoms('.section,.sess-card,.stat-grid,.loc-stack'), klein=bottoms('.brow,.qbox,.org-item,tr');
         let start=0;
         for(;;){
           const usable=(start===0?ph:ph-2*RAND)*pxmm;
@@ -2062,9 +2122,6 @@ function gemeenteStats(){
 }
 async function printGemeenteEvaluatie(){
   // venster synchroon openen (popup-blokkade), daarna pas de kaart opbouwen
-  const w=window.open('','_blank');
-  if(!w){ alert('Pop-up geblokkeerd — sta pop-ups toe voor deze pagina en probeer opnieuw.'); return; }
-  w.document.write('<p style="font:14px sans-serif;padding:24px;color:#555;">Rapport wordt opgebouwd… (kaart laden)</p>');
   let kaartHtml;
   try{ kaartHtml=await locatieKaartHtmlAsync(db.deelnemers); }catch(e){ kaartHtml=locatieKaartHtml(db.deelnemers); }
   const S=gemeenteStats();
@@ -2115,11 +2172,7 @@ async function printGemeenteEvaluatie(){
     <div class="section" style="margin-top:8mm;break-inside:avoid;page-break-inside:avoid;"><div class="sec-label teal">Locatieverdeling</div>${kaartHtml}</div>
     </div><div class="footer"><div class="footer-txt">Samen Digitaal Sterk · Rotterdam 2026</div><div class="footer-txt">Evaluatie · Gemeente Rotterdam</div></div><div class="bar" style="margin-top:2mm;"></div></div>`;
   const DOC=`<!DOCTYPE html><html lang="nl"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Evaluatie Gemeente</title><style>${EVAL_RAPPORT_CSS}${EVAL_COMPACT}${EVAL_MOBIEL}</style></head><body>${page}${gemeenteThemaPage()}</body></html>`;
-  w.document.open(); w.document.write(DOC); w.document.close(); w.focus();
-  // printen pas als alle (kaart)tegels binnen zijn (max 8 s)
-  const klaar=Promise.all([...w.document.images].map(im=>im.complete?1:new Promise(r=>{ im.onload=im.onerror=r; })));
-  await Promise.race([klaar,new Promise(r=>setTimeout(r,8000))]);
-  setTimeout(()=>{ if(!w.closed && !w.matchMedia('(max-width:700px)').matches) w.print(); },500);
+  return maakPdfUitDoc(DOC, 'Evaluatie_Gemeente_Rotterdam_SDS_'+new Date().toISOString().slice(0,10)+'.pdf');
 }
 
 // ── EDIT DEELNEMER ──
@@ -2244,7 +2297,7 @@ function removeVrijwWs(wsId,vId){
 }
 
 function deleteOrg(id){ if(!confirm('Organisatie verwijderen?'))return; db.organisaties=db.organisaties.filter(x=>x.id!==id); save(); renderOrgs(); }
-function toggleOrgBody(id){ const el=document.getElementById('org-body-'+id); if(el) el.classList.toggle('open'); }
+function toggleOrgBody(id){ const el=document.getElementById('org-body-'+id); if(el){ el.classList.toggle('open'); const k=el.closest('.org-card'); if(k) k.classList.toggle('open',el.classList.contains('open')); } }
 function saveOrgField(id,field,val){ const o=db.organisaties.find(x=>x.id===id); if(o){o[field]=val;save();} }
 function saveOrgStatus(id,val){ const o=db.organisaties.find(x=>x.id===id); if(o){o.status=val;save();renderOrgs();} }
 
@@ -2272,15 +2325,15 @@ function renderOrgs() {
     return `<div class="org-card">
       <div class="org-header" onclick="toggleOrgBody(${o.id})">
         <div style="flex:1;">
-          <div style="font-weight:600;font-size:14px;">${o.naam}${o.wijk?' <span style="font-weight:400;color:#888;font-size:13px;">— '+o.wijk+'</span>':''}</div>
-          ${o.adres?`<div style="font-size:12px;color:#777;margin-top:2px;">📍 ${o.adres}</div>`:''}
+          <div class="ws-naam">${o.naam}${o.wijk?'<span class="ws-wijk"> · '+o.wijk+'</span>':''}</div>
+          ${o.adres?`<div class="ws-meta">${o.adres}</div>`:''}
           <div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
             <span class="badge ${STATUS_BADGE[o.status]||'b-grijs'}">${{aangeschreven:'Aangeschreven',interesse:'Interesse',bevestigd:'Bevestigd',afgevallen:'Afgevallen'}[o.status]||o.status}</span>
-            ${ws?`<span class="badge b-blauw">📅 ${fmtDateShort(ws.dag1)} &amp; ${fmtDateShort(ws.dag2)}</span>`:''}
+            ${ws?`<span class="badge b-grijs">${fmtDateShort(ws.dag1)} &amp; ${fmtDateShort(ws.dag2)}</span>`:''}
             ${o.flyer?'<span class="badge b-groen">📄 Flyer verstuurd</span>':''}
           </div>
         </div>
-        <div style="font-size:18px;color:#ccc;flex-shrink:0;">▾</div>
+        <svg class="chev" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
       </div>
       <div class="org-body" id="org-body-${o.id}">
 
@@ -2416,33 +2469,32 @@ function renderWorkshops(preOrgId) {
         </div>
       </div>`).join('')
       : '<div style="font-size:12px;color:#aaa;padding:6px 0;">Nog geen deelnemers.</div>';
-    return `<div class="card">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;">
-        <div style="flex:1;">
-          <div style="font-weight:600;font-size:14px;">${w.org}${w.wijk?' <span style="font-weight:400;color:#888;">— '+w.wijk+'</span>':''}${ev?` <span style="font-size:10px;color:#4DA99A;font-weight:600;">✓ ${evD.length} evaluatie${evD.length===1?'':'s'}</span>`:''}</div>
-          <div style="font-size:12px;color:#666;margin-top:2px;">
-            📅 ${fmtDate(w.dag1)} &amp; ${fmtDate(w.dag2)}${w.tijd?' · '+w.tijd:''}
-            <a href="${cal.url1}" target="_blank" style="font-size:10px;color:#4DA99A;text-decoration:none;margin-left:4px;" title="Dag 1 agenda">📆D1</a>
-            <a href="${cal.url2}" target="_blank" style="font-size:10px;color:#4DA99A;text-decoration:none;margin-left:4px;" title="Dag 2 agenda">📆D2</a>
-          </div>
-          ${w.adres?`<div style="font-size:12px;color:#666;">📍 ${w.adres}</div>`:''}
-          ${w.contact?`<div style="font-size:12px;color:#666;">👤 ${w.contact}</div>`:''}
-          ${vw.length?`<div style="font-size:11px;color:#666;">🙋 ${vw.map(v=>v.naam).join(', ')}</div>`:''}
-          ${n>0?`<div style="margin-top:4px;font-size:10px;color:#888;">D1: ${a1}/${n} · D2: ${a2}/${n}</div><div class="pb"><div class="pb-o" style="width:${n?Math.round(a1/n*100):0}%"></div></div>`:''}
+    const open=openWsPanels.has(w.id);
+    const heeftRapport=(evD.length || db.evaluaties.some(e=>e.wsId===w.id&&(e.type==='o'||e.type==='e')) || w.evalNvt);
+    return `<div class="card ws-card${open?' open':''}" id="wscard-${w.id}">
+      <div class="ws-kop" onclick="toggleDeelnWs(${w.id})">
+        <div style="flex:1;min-width:0;">
+          <div class="ws-naam">${w.org}${w.wijk?'<span class="ws-wijk"> · '+w.wijk+'</span>':''}</div>
+          <div class="ws-meta">${fmtDateShort(w.dag1)} &amp; ${fmtDateShort(w.dag2)}${w.tijd?' · '+w.tijd:''}</div>
+          <div class="ws-chips">${n?`<span class="chip">Dag 1 · ${a1}/${n}</span><span class="chip">Dag 2 · ${a2}/${n}</span>`:''}${ev?`<span class="chip chip-t">${evD.length} evaluatie${evD.length===1?'':'s'}</span>`:''}</div>
         </div>
-        <div style="text-align:right;flex-shrink:0;">
-          <div style="font-size:26px;font-weight:700;color:#E8943A;">${n}</div>
-          <div style="font-size:10px;color:#888;">deelnemers</div>
-          <div style="display:flex;flex-direction:column;gap:4px;margin-top:8px;align-items:flex-end;">
-            <button class="btn btn-sm btn-t" onclick="printD2Lijst(${w.id})" style="font-size:11px;background:#4DA99A;border-color:#4DA99A;color:#fff;">🖨 D2-lijst</button>
-            <button class="btn btn-sm" onclick="toggleDeelnWs(${w.id},this)" style="font-size:11px;">👥 ${openWsPanels.has(w.id)?'Inklappen':'Deelnemers'}</button>
-            <button class="btn btn-sm btn-o" onclick="editWorkshop(${w.id})" style="font-size:11px;">✏️ Edit</button>
-            <button class="btn btn-sm" onclick="evalWorkshop(${w.id})" style="font-size:11px;background:#1C1E20;color:#fff;border-color:#1C1E20;">📝 Evaluatie</button>
-            ${isB?`<button class="btn btn-del btn-sm" onclick="deleteWorkshop(${w.id})">🗑</button>`:''}
-          </div>
-        </div>
+        <div class="ws-num"><div class="n">${n}</div><div class="l">deelnemers</div></div>
+        <svg class="chev" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
       </div>
-      <div id="deeln-ws-${w.id}" style="display:${openWsPanels.has(w.id)?'block':'none'};margin-top:10px;padding-top:8px;border-top:1px solid #eee;">
+      <div id="deeln-ws-${w.id}" class="ws-body" style="display:${open?'block':'none'};">
+        <div class="ws-info">
+          ${w.adres?`<div><span>Locatie</span>${w.adres}</div>`:''}
+          ${w.contact?`<div><span>Contact</span>${w.contact}</div>`:''}
+          ${vw.length?`<div><span>Vrijwilligers</span>${vw.map(v=>v.naam).join(', ')}</div>`:''}
+          <div><span>Agenda</span><a href="${cal.url1}" target="_blank">Dag 1</a> · <a href="${cal.url2}" target="_blank">Dag 2</a></div>
+        </div>
+        <div class="ws-acties">
+          <button class="btn btn-sm btn-o" onclick="editWorkshop(${w.id})">Bewerken</button>
+          <button class="btn btn-sm btn-t" onclick="evalWorkshop(${w.id})">Evaluatie invoeren</button>
+          <button class="btn btn-sm" onclick="printD2Lijst(${w.id})">Lijst dag 2</button>
+          ${heeftRapport?`<button class="btn btn-sm" onclick="printEvaluatieRapport(${w.id})">Rapport (PDF)</button>`:''}
+          ${isB?`<button class="btn btn-del btn-sm" onclick="deleteWorkshop(${w.id})" style="margin-left:auto;">Verwijderen</button>`:''}
+        </div>
 
         <!-- Aanwezigheid -->
         <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#E8943A;margin-bottom:4px;">Aanwezigheid</div>
@@ -2451,7 +2503,6 @@ function renderWorkshops(preOrgId) {
         <!-- Evaluaties -->
         <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#1C1E20;margin:12px 0 6px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
           <span>Evaluaties (${evD.length})</span>
-          ${(evD.length || db.evaluaties.some(e=>e.wsId===w.id&&(e.type==='o'||e.type==='e')) || w.evalNvt) ? `<button class="btn btn-sm btn-t" onclick="printEvaluatieRapport(${w.id})" style="font-size:10px;padding:2px 8px;background:#4DA99A;border-color:#4DA99A;color:#fff;">📊 Rapport</button>` : ''}
         </div>
         ${evalBullets(w.id)}
 
@@ -2578,12 +2629,13 @@ function addWorkshop(){
   if(org.status!=='bevestigd'){org.status='bevestigd';}
   save(); renderWorkshops(); renderOrgs();
 }
-function toggleDeelnWs(wsId, btn) {
-  const el = document.getElementById('deeln-ws-'+wsId);
+function toggleDeelnWs(wsId) {
+  const el = document.getElementById('deeln-ws-'+wsId), kaart=document.getElementById('wscard-'+wsId);
   if (!el) return;
   const open = el.style.display !== 'none';
-  if (open) { openWsPanels.delete(wsId); el.style.display='none'; btn.textContent='👥 Deelnemers'; }
-  else { openWsPanels.add(wsId); el.style.display='block'; btn.textContent='👥 Inklappen'; }
+  if (open) { openWsPanels.delete(wsId); el.style.display='none'; }
+  else { openWsPanels.add(wsId); el.style.display='block'; }
+  if (kaart) kaart.classList.toggle('open', !open);
 }
 function setAanwWs(deelnId, les, wsId) {
   const d = db.deelnemers.find(x=>x.id===deelnId);
@@ -2935,7 +2987,7 @@ function renderEvaluatie(){
       <div class="stat"><div class="stat-n" style="color:#4DA99A;">${S.pctEigenGoed}%</div><div class="stat-l">Eigen: samenwerking<br><span style="font-size:10px;color:#aaa;">goed/zeer goed (${S.eigenIngevuld} ingevuld)</span></div></div>
       <div class="stat"><div class="stat-n" style="color:#4DA99A;">${S.pctZekerder}%</div><div class="stat-l">Zekerder online<br><span style="font-size:10px;color:#aaa;">(${S.N} formulieren)</span></div></div>
     </div>
-    <button class="btn btn-t" onclick="printGemeenteEvaluatie()" style="margin-top:12px;">🏛 Gemeente-evaluatie (print)</button>
+    <button class="btn btn-t" onclick="printGemeenteEvaluatie()" style="margin-top:12px;">🏛 Gemeente-evaluatie (PDF)</button>
     <button class="btn" onclick="opmerkingenOverzicht()" style="margin-top:12px;">💬 Opmerkingen per workshop</button>
   </div>
   <div class="card">
